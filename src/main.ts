@@ -13,6 +13,7 @@ type Post = {
     time: string;
     text: string;
     hasMedia?: boolean;
+    liked?: boolean;
 };
 
 const posts: Post[] = [
@@ -46,7 +47,7 @@ function createPost(post: Post): HTMLElement {
         <div class="post-header">
             <div class="avatar"></div>
             <div>
-                <div class="name">${users[post.userId]}</div>
+                <div class="name">${users[post.userId] ?? "Unknown"}</div>
                 <div class="time">${post.time}</div>
             </div>
         </div>
@@ -56,11 +57,25 @@ function createPost(post: Post): HTMLElement {
         ${post.hasMedia ? `<div class="media"></div>` : ""}
 
         <div class="actions">
-            <button class="btn"><i class="fa-regular fa-heart"></i></button>
+            <button class="btn like-btn">
+                <i class="${post.liked ? "fa-solid" : "fa-regular"} fa-heart"></i>
+            </button>
             <button class="btn"><i class="fa-regular fa-comment"></i></button>
             <button class="btn"><i class="fa-solid fa-share"></i></button>
         </div>
     `;
+
+    const likeBtn = el.querySelector(".like-btn") as HTMLButtonElement;
+    const icon = likeBtn.querySelector("i") as HTMLElement;
+
+    likeBtn.addEventListener("click", () => {
+        post.liked = !post.liked;
+
+        icon.classList.toggle("fa-solid", post.liked);
+        icon.classList.toggle("fa-regular", !post.liked);
+
+        icon.style.color = post.liked ? "#e74c3c" : "#cfcfcf";
+    });
 
     return el;
 }
