@@ -86,3 +86,37 @@ body {
 .btn i {
     font-size: 15px;
 }
+
+@media (max-width: 640px) {
+    body {
+        justify-content: stretch;
+    }
+
+    .feed {
+        width: 100%;
+        padding: 10px;
+    }
+
+    .post {
+        padding: 12px;
+        border-radius: 10px;
+    }
+
+    .media {
+        height: 160px;
+    }
+
+    .btn {
+        width: 42px;
+        height: 42px;
+        border-radius: 12px;
+    }
+
+    .name {
+        font-size: 13px;
+    }
+
+    .text {
+        font-size: 13px;
+    }
+}
