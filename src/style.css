@@ -234,3 +234,57 @@ body {
     min-height: 16px;
     margin-bottom: 6px;
 }
+
+.create-post {
+    width: 600px;
+    background: #1b1b1b;
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 12px;
+    padding: 12px;
+    margin: 20px auto 10px;
+}
+
+.create-header {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.create-header input {
+    flex: 1;
+    background: #2a2a2a;
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 10px;
+    padding: 10px;
+    color: #e6e6e6;
+    outline: none;
+    font-size: 14px;
+}
+
+.create-header input:focus {
+    border-color: rgba(255,255,255,0.15);
+}
+
+.create-actions {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 10px;
+}
+
+.create-actions .icon {
+    width: 38px;
+    height: 38px;
+}
+
+.create-actions .submit {
+    padding: 0 14px;
+    height: 38px;
+    width: auto;
+}
+
+@media (max-width: 640px) {
+    .create-post {
+        width: 100%;
+        margin: 10px 0;
+    }
+}
