@@ -9,6 +9,8 @@ body {
     justify-content: center;
 }
 
+.hidden { display: none !important; }
+
 .feed {
     width: 600px;
     padding: 20px;
@@ -119,4 +121,116 @@ body {
     .text {
         font-size: 13px;
     }
+}
+
+/* ===== AUTH ===== */
+
+.auth-screen {
+    position: fixed;
+    inset: 0;
+    background: #121212;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.auth-card {
+    width: 320px;
+    background: #1b1b1b;
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 14px;
+    padding: 20px;
+}
+
+.auth-logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    justify-content: center;
+    margin-bottom: 16px;
+}
+
+.logo-text {
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.auth-tabs {
+    display: flex;
+    margin-bottom: 16px;
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.auth-tab {
+    flex: 1;
+    padding: 8px;
+    background: transparent;
+    border: none;
+    color: #9a9a9a;
+    cursor: pointer;
+    font-size: 13px;
+}
+
+.auth-tab.active {
+    background: rgba(255,255,255,0.06);
+    color: #fff;
+}
+
+.auth-form {
+    display: none;
+}
+
+.auth-form.active {
+    display: block;
+}
+
+.field {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 12px;
+}
+
+.field label {
+    font-size: 12px;
+    color: #9a9a9a;
+    margin-bottom: 4px;
+}
+
+.field input {
+    background: #2a2a2a;
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 8px;
+    padding: 8px 10px;
+    color: #e6e6e6;
+    outline: none;
+    font-size: 13px;
+}
+
+.field input:focus {
+    border-color: rgba(255,255,255,0.15);
+}
+
+.auth-submit {
+    width: 100%;
+    margin-top: 6px;
+    background: #2a2a2a;
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 10px;
+    padding: 10px;
+    color: #e6e6e6;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.auth-submit:hover {
+    background: #333;
+}
+
+.auth-error {
+    font-size: 12px;
+    color: #ff6b6b;
+    min-height: 16px;
+    margin-bottom: 6px;
 }

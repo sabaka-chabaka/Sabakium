@@ -8,7 +8,63 @@
 </head>
 <body>
 
-<div class="feed" id="feed"></div>
+<div id="auth-screen" class="auth-screen">
+    <div class="auth-card">
+        <div class="auth-logo">
+            <div class="logo-mark">
+                <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
+                    <path d="M18 3L32 10V26L18 33L4 26V10L18 3Z" fill="#3b82f6" opacity="0.15"/>
+                    <path d="M18 3L32 10V26L18 33L4 26V10L18 3Z" stroke="#3b82f6" stroke-width="1.5"/>
+                    <circle cx="18" cy="18" r="5" fill="#3b82f6"/>
+                    <line x1="18" y1="8" x2="18" y2="13" stroke="#3b82f6" stroke-width="1.5"/>
+                    <line x1="18" y1="23" x2="18" y2="28" stroke="#3b82f6" stroke-width="1.5"/>
+                    <line x1="9" y1="13" x2="14" y2="15.5" stroke="#3b82f6" stroke-width="1.5"/>
+                    <line x1="22" y1="20.5" x2="27" y2="23" stroke="#3b82f6" stroke-width="1.5"/>
+                    <line x1="27" y1="13" x2="22" y2="15.5" stroke="#3b82f6" stroke-width="1.5"/>
+                    <line x1="14" y1="20.5" x2="9" y2="23" stroke="#3b82f6" stroke-width="1.5"/>
+                </svg>
+            </div>
+            <span class="logo-text">Sabakium</span>
+        </div>
+
+        <div class="auth-tabs">
+            <button class="auth-tab active" data-tab="login">Войти</button>
+            <button class="auth-tab" data-tab="register">Регистрация</button>
+        </div>
+
+        <div id="login-form" class="auth-form active">
+            <div class="field">
+                <label>Имя пользователя</label>
+                <input type="text" id="login-username" placeholder="username" autocomplete="username"/>
+            </div>
+            <div class="field">
+                <label>Пароль</label>
+                <input type="password" id="login-password" placeholder="••••••••" autocomplete="current-password"/>
+            </div>
+            <div id="login-error" class="auth-error"></div>
+            <button id="login-btn" class="auth-submit">Войти</button>
+        </div>
+
+        <div id="register-form" class="auth-form">
+            <div class="field">
+                <label>Имя пользователя</label>
+                <input type="text" id="reg-username" placeholder="username"/>
+            </div>
+            <div class="field">
+                <label>Отображаемое имя</label>
+                <input type="text" id="reg-displayname" placeholder="Иван Иванов"/>
+            </div>
+            <div class="field">
+                <label>Пароль</label>
+                <input type="password" id="reg-password" placeholder="минимум 6 символов"/>
+            </div>
+            <div id="reg-error" class="auth-error"></div>
+            <button id="reg-btn" class="auth-submit">Создать аккаунт</button>
+        </div>
+    </div>
+</div>
+
+<div class="feed hidden" id="feed"></div>
 
 <script type="module" src="src/main.ts"></script>
 </body>
