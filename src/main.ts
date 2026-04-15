@@ -39,6 +39,27 @@ const posts: Post[] = [
 
 const feed = document.getElementById("feed") as HTMLDivElement;
 
+const tabs = document.querySelectorAll(".auth-tab");
+const forms = document.querySelectorAll(".auth-form");
+
+tabs.forEach(tab => {
+    tab.addEventListener("click", () => {
+        const target = tab.getAttribute("data-tab");
+
+        // tabs
+        tabs.forEach(t => t.classList.remove("active"));
+        tab.classList.add("active");
+
+        // forms
+        forms.forEach(f => {
+            f.classList.remove("active");
+        });
+
+        const form = document.getElementById(`${target}-form`);
+        form?.classList.add("active");
+    });
+});
+
 function createPost(post: Post): HTMLElement {
     const el = document.createElement("div");
     el.className = "post";

@@ -1,8 +1,11 @@
 @import url('https://fonts.googleapis.com/css2?family=Comfortaa:wght@300..700&display=swap');
 
+*{
+    font-family: Comfortaa, sans-serif;
+}
+
 body {
     margin: 0;
-    font-family: Comfortaa, sans-serif;
     background: #121212;
     color: #e6e6e6;
     display: flex;
