@@ -1,111 +1,175 @@
-import './style.css'
+import {
+    apiCreatePost,
+    apiDeletePost,
+    apiFetchPosts,
+    apiLogin,
+    apiRegister,
+    loadSession,
+    saveSession,
+    type PostDto,
+} from "./api";
+import { connectFeed, onFeedEvent } from "./feedhub";
 
-const users: string[] = [
-    "",
-    "John Doe",
-    "Jane Doe",
-    "Bob Smith"
-]
+let oldestPostId: number | undefined;
+let isLoading = false;
+let hasMore = true;
+const PAGE_SIZE = 20;
 
-type Post = {
-    userId: number;
-    id: number;
-    time: string;
-    text: string;
-    hasMedia?: boolean;
-    liked?: boolean;
-};
+const authScreen = document.getElementById("auth-screen")!;
+const feedEl = document.getElementById("feed")!;
+const createPostEl = document.getElementById("create-post")!;
+const postInput = document.getElementById("post-input") as HTMLInputElement;
+const postSubmit = document.getElementById("post-submit")!;
 
-const posts: Post[] = [
-    {
-        userId: 1,
-        id: 1,
-        time: "1 hour ago",
-        text: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
-    },
-    {
-        userId: 2,
-        id: 2,
-        time: "2 hours ago",
-        text: "Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo. Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt."
-    },
-    {
-        userId: 3,
-        id: 3,
-        time: "3 hours ago",
-        text: "Bonjour"
-    }
-];
+const loginBtn = document.getElementById("login-btn")!;
+const regBtn = document.getElementById("reg-btn")!;
+const loginError = document.getElementById("login-error")!;
+const regError = document.getElementById("reg-error")!;
+const authTabs = document.querySelectorAll<HTMLButtonElement>(".auth-tab");
 
-const feed = document.getElementById("feed") as HTMLDivElement;
-
-const tabs = document.querySelectorAll(".auth-tab");
-const forms = document.querySelectorAll(".auth-form");
-
-tabs.forEach(tab => {
+authTabs.forEach((tab) => {
     tab.addEventListener("click", () => {
-        const target = tab.getAttribute("data-tab");
-
-        // tabs
-        tabs.forEach(t => t.classList.remove("active"));
+        authTabs.forEach((t) => t.classList.remove("active"));
         tab.classList.add("active");
-
-        // forms
-        forms.forEach(f => {
-            f.classList.remove("active");
-        });
-
-        const form = document.getElementById(`${target}-form`);
-        form?.classList.add("active");
+        document
+            .querySelectorAll<HTMLElement>(".auth-form")
+            .forEach((f) => f.classList.remove("active"));
+        document.getElementById(`${tab.dataset["tab"]}-form`)!.classList.add("active");
     });
 });
 
-function createPost(post: Post): HTMLElement {
+loginBtn.addEventListener("click", async () => {
+    const username = (document.getElementById("login-username") as HTMLInputElement).value;
+    const password = (document.getElementById("login-password") as HTMLInputElement).value;
+    loginError.textContent = "";
+    try {
+        const session = await apiLogin(username, password);
+        saveSession(session);
+        await boot();
+    } catch (e: unknown) {
+        loginError.textContent = (e as Error).message;
+    }
+});
+
+regBtn.addEventListener("click", async () => {
+    const username = (document.getElementById("reg-username") as HTMLInputElement).value;
+    const displayName = (document.getElementById("reg-displayname") as HTMLInputElement).value;
+    const password = (document.getElementById("reg-password") as HTMLInputElement).value;
+    regError.textContent = "";
+    try {
+        const session = await apiRegister(username, displayName, password);
+        saveSession(session);
+        await boot();
+    } catch (e: unknown) {
+        regError.textContent = (e as Error).message;
+    }
+});
+
+postSubmit.addEventListener("click", async () => {
+    const content = postInput.value.trim();
+    if (!content) return;
+    postSubmit.setAttribute("disabled", "true");
+    try {
+        await apiCreatePost(content);
+        postInput.value = "";
+        // Пост придёт через SignalR и сам вставится в ленту
+    } catch (e: unknown) {
+        alert((e as Error).message);
+    } finally {
+        postSubmit.removeAttribute("disabled");
+    }
+});
+
+function renderPost(post: PostDto, prepend = false): HTMLElement {
+    const session = loadSession();
+    const isOwn = session?.userId === post.userId;
+
     const el = document.createElement("div");
     el.className = "post";
+    el.dataset["id"] = String(post.id);
+
+    const date = new Date(post.createdAt).toLocaleString("ru-RU", {
+        day: "2-digit",
+        month: "short",
+        hour: "2-digit",
+        minute: "2-digit",
+    });
 
     el.innerHTML = `
-        <div class="post-header">
-            <div class="avatar"></div>
-            <div>
-                <div class="name">${users[post.userId] ?? "Unknown"}</div>
-                <div class="time">${post.time}</div>
-            </div>
-        </div>
+    <div class="post-header">
+      <div class="avatar"></div>
+      <div class="post-meta">
+        <span class="post-author">${esc(post.displayName)}</span>
+        <span class="post-username">@${esc(post.username)}</span>
+        <span class="post-date">${date}</span>
+      </div>
+      ${isOwn ? `<button class="btn icon post-delete" data-id="${post.id}" title="Удалить">✕</button>` : ""}
+    </div>
+    <div class="post-content">${esc(post.content)}</div>
+  `;
 
-        <div class="text">${post.text}</div>
-
-        ${post.hasMedia ? `<div class="media"></div>` : ""}
-
-        <div class="actions">
-            <button class="btn like-btn">
-                <i class="${post.liked ? "fa-solid" : "fa-regular"} fa-heart"></i>
-            </button>
-            <button class="btn"><i class="fa-regular fa-comment"></i></button>
-            <button class="btn"><i class="fa-solid fa-share"></i></button>
-        </div>
-    `;
-
-    const likeBtn = el.querySelector(".like-btn") as HTMLButtonElement;
-    const icon = likeBtn.querySelector("i") as HTMLElement;
-
-    likeBtn.addEventListener("click", () => {
-        post.liked = !post.liked;
-
-        icon.classList.toggle("fa-solid", post.liked);
-        icon.classList.toggle("fa-regular", !post.liked);
-
-        icon.style.color = post.liked ? "#e74c3c" : "#cfcfcf";
+    el.querySelector(".post-delete")?.addEventListener("click", async () => {
+        if (!confirm("Удалить пост?")) return;
+        await apiDeletePost(post.id);
     });
+
+    if (prepend) feedEl.prepend(el);
+    else feedEl.append(el);
 
     return el;
 }
 
-function renderFeed(list: Post[]) {
-    feed.innerHTML = "";
-    list.forEach(post => {
-        feed.appendChild(createPost(post));
+function esc(text: string): string {
+    return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+async function loadMore() {
+    if (isLoading || !hasMore) return;
+    isLoading = true;
+
+    const posts = await apiFetchPosts(oldestPostId, PAGE_SIZE);
+
+    if (posts.length < PAGE_SIZE) hasMore = false;
+    if (posts.length > 0) {
+        posts.forEach((p) => renderPost(p));
+        oldestPostId = posts[posts.length - 1]!.id;
+    }
+
+    isLoading = false;
+}
+
+window.addEventListener("scroll", () => {
+    if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 300) {
+        loadMore();
+    }
+});
+
+function wireSignalR() {
+    onFeedEvent("newPost", (post) => {
+        renderPost(post, true);
+    });
+
+    onFeedEvent("deletePost", (id) => {
+        document.querySelector<HTMLElement>(`.post[data-id="${id}"]`)?.remove();
     });
 }
 
-renderFeed(posts);
+
+async function boot() {
+    authScreen.classList.add("hidden");
+    feedEl.classList.remove("hidden");
+    createPostEl.classList.remove("hidden");
+
+    feedEl.innerHTML = "";
+    oldestPostId = undefined;
+    hasMore = true;
+
+    await connectFeed();
+    wireSignalR();
+    await loadMore();
+}
+
+const existingSession = loadSession();
+if (existingSession) {
+    boot();
+}
