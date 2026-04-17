@@ -7,7 +7,7 @@ import {
     initCryptoKey,
     onChatMessage,
     sendEncryptedMessage,
-    type EncryptedMessageDto
+    type EncryptedMessageDto,
 } from "./chathub";
 import { loadSession } from "./api";
 
@@ -16,22 +16,56 @@ let chatConnected = false;
 let messagesOldestId: number | undefined;
 let messagesHasMore = true;
 let messagesLoading = false;
+let unreadCount = 0;
 
-const convListEl   = document.getElementById("conv-list")!;
-const chatPaneEl   = document.getElementById("chat-pane")!;
-const chatMessagesEl = document.getElementById("chat-messages")!;
-const chatInputEl  = document.getElementById("chat-input") as HTMLInputElement;
-const chatSendBtn  = document.getElementById("chat-send")!;
-const chatPartnerEl = document.getElementById("chat-partner-name")!;
-const newChatBtn   = document.getElementById("new-chat-btn")!;
-const newChatModal = document.getElementById("new-chat-modal")!;
-const newChatClose = document.getElementById("new-chat-close")!;
+const convListEl      = document.getElementById("conv-list")!;
+const chatPaneEl      = document.getElementById("chat-pane")!;
+const chatEmptyEl     = document.getElementById("chat-empty")!;
+const chatMessagesEl  = document.getElementById("chat-messages")!;
+const chatInputEl     = document.getElementById("chat-input") as HTMLInputElement;
+const chatSendBtn     = document.getElementById("chat-send")!;
+const chatPartnerEl   = document.getElementById("chat-partner-name")!;
+const newChatBtn      = document.getElementById("new-chat-btn")!;
+const newChatModal    = document.getElementById("new-chat-modal")!;
+const newChatClose    = document.getElementById("new-chat-close")!;
 const newChatSearchEl = document.getElementById("new-chat-search") as HTMLInputElement;
-const newChatResultsEl = document.getElementById("new-chat-results")!;
+const newChatResultsEl= document.getElementById("new-chat-results")!;
+const messengerNavBtn = document.querySelector<HTMLElement>('.nav-item[data-tab="messenger"]')!;
 
 function esc(t: string) {
     return t.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
 }
+
+function isMessengerTabActive(): boolean {
+    return document.getElementById("tab-messenger")?.classList.contains("hidden") === false;
+}
+
+function addUnread(n = 1) {
+    if (isMessengerTabActive()) return;
+    unreadCount += n;
+    updateBadge();
+}
+
+function clearUnread() {
+    unreadCount = 0;
+    updateBadge();
+}
+
+function updateBadge() {
+    let badge = messengerNavBtn.querySelector<HTMLElement>(".nav-badge");
+    if (unreadCount > 0) {
+        if (!badge) {
+            badge = document.createElement("span");
+            badge.className = "nav-badge";
+            messengerNavBtn.appendChild(badge);
+        }
+        badge.textContent = unreadCount > 99 ? "99+" : String(unreadCount);
+    } else {
+        badge?.remove();
+    }
+}
+
+messengerNavBtn.addEventListener("click", clearUnread, { capture: true });
 
 async function refreshConversations() {
     const convs = await apiGetConversations();
@@ -65,10 +99,12 @@ async function openConversation(partnerId: number, partnerName: string) {
     messagesOldestId = undefined;
     messagesHasMore = true;
     chatMessagesEl.innerHTML = "";
+
     chatPaneEl.classList.remove("hidden");
+    chatEmptyEl.classList.add("hidden");
+
     chatPartnerEl.textContent = partnerName;
 
-    // Mark active conversation
     document.querySelectorAll(".conv-item").forEach(el => {
         el.classList.toggle("active", el.getAttribute("data-pid") === String(partnerId));
     });
@@ -80,20 +116,35 @@ async function openConversation(partnerId: number, partnerName: string) {
 async function loadOlderMessages() {
     if (messagesLoading || !messagesHasMore || currentPartnerId === null) return;
     messagesLoading = true;
+
+    const prevScrollHeight = chatMessagesEl.scrollHeight;
+
     const msgs = await apiGetHistory(currentPartnerId, messagesOldestId, 50);
     if (msgs.length < 50) messagesHasMore = false;
+
     if (msgs.length > 0) {
-        // msgs are newest-first, reverse to render oldest-first
-        const ordered = [...msgs].reverse();
-        for (const m of ordered) {
-            await prependMessage(m);
+        const oldest = msgs[msgs.length - 1]!.id;
+        if (messagesOldestId === undefined || oldest < messagesOldestId) {
+            messagesOldestId = oldest;
         }
-        messagesOldestId = msgs[msgs.length - 1]!.id;
+
+        const fragment = document.createDocumentFragment();
+        const chronological = [...msgs].reverse(); // oldest → newest
+        for (const m of chronological) {
+            const el = await buildMessageEl(m);
+            fragment.appendChild(el);
+        }
+        chatMessagesEl.insertBefore(fragment, chatMessagesEl.firstChild);
+
+        if (messagesOldestId !== undefined) {
+            chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight - prevScrollHeight;
+        }
     }
+
     messagesLoading = false;
 }
 
-async function renderMessage(msg: EncryptedMessageDto, prepend = false) {
+async function buildMessageEl(msg: EncryptedMessageDto): Promise<HTMLElement> {
     const session = loadSession();
     const isOwn = msg.senderId === session?.userId;
     let text = "[зашифровано]";
@@ -111,30 +162,26 @@ async function renderMessage(msg: EncryptedMessageDto, prepend = false) {
             <div class="msg-text">${esc(text)}</div>
             <div class="msg-time">${time}</div>
         </div>`;
-
-    if (prepend) chatMessagesEl.prepend(el);
-    else chatMessagesEl.append(el);
-}
-
-async function prependMessage(msg: EncryptedMessageDto) {
-    await renderMessage(msg, true);
+    return el;
 }
 
 async function handleIncoming(msg: EncryptedMessageDto) {
-    // Refresh sidebar
     await refreshConversations();
 
-    if (msg.senderId !== currentPartnerId && msg.recipientId !== currentPartnerId) return;
-    // Only render if this conversation is open
     const myId = loadSession()?.userId;
     const isThisConv =
-        (msg.senderId === myId && msg.recipientId === currentPartnerId) ||
+        (msg.senderId === myId      && msg.recipientId === currentPartnerId) ||
         (msg.senderId === currentPartnerId && msg.recipientId === myId);
-    if (!isThisConv) return;
 
-    const wasAtBottom = chatMessagesEl.scrollTop + chatMessagesEl.clientHeight >= chatMessagesEl.scrollHeight - 30;
-    await renderMessage(msg, false);
-    if (wasAtBottom) chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
+    if (isThisConv && !chatPaneEl.classList.contains("hidden")) {
+        const wasAtBottom = chatMessagesEl.scrollTop + chatMessagesEl.clientHeight >= chatMessagesEl.scrollHeight - 40;
+        const el = await buildMessageEl(msg);
+        chatMessagesEl.appendChild(el);
+        if (wasAtBottom) chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
+    } else if (msg.senderId !== myId) {
+        // Message for a conversation not currently open → badge
+        addUnread(1);
+    }
 }
 
 async function sendMessage() {
@@ -146,9 +193,11 @@ async function sendMessage() {
     try {
         await sendEncryptedMessage(currentPartnerId, text);
     } catch (e) {
+        chatInputEl.value = text; // restore on error
         alert((e as Error).message);
     } finally {
         chatSendBtn.removeAttribute("disabled");
+        chatInputEl.focus();
     }
 }
 
@@ -159,6 +208,7 @@ function openNewChatModal() {
     newChatSearchEl.value = "";
     newChatResultsEl.innerHTML = "";
     newChatSearchEl.focus();
+    searchAndRender("");
 }
 
 function closeNewChatModal() {
@@ -200,7 +250,9 @@ export async function initMessenger() {
     });
 
     chatSendBtn.addEventListener("click", sendMessage);
-    chatInputEl.addEventListener("keydown", e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); }});
+    chatInputEl.addEventListener("keydown", e => {
+        if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+    });
     newChatBtn.addEventListener("click", openNewChatModal);
     newChatClose.addEventListener("click", closeNewChatModal);
     newChatModal.addEventListener("click", e => { if (e.target === newChatModal) closeNewChatModal(); });
