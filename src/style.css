@@ -9,29 +9,36 @@ body {
     background: #121212;
     color: #e6e6e6;
     display: flex;
-    justify-content: center;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
 }
 
 .hidden { display: none !important; }
 
 .feed {
-    width: 600px;
+    width: 100%;
+    max-width: 600px;
     padding: 20px;
+    box-sizing: border-box;
 }
 
 .post {
     background: #1b1b1b;
     border: 1px solid rgba(255,255,255,0.06);
     border-radius: 12px;
-    padding: 14px;
-    margin-bottom: 14px;
+    padding: 16px;
+    margin-bottom: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
 }
 
 .post-header {
     display: flex;
     align-items: center;
+    justify-content: space-between;
     gap: 10px;
-    margin-bottom: 10px;
 }
 
 .avatar {
@@ -239,12 +246,14 @@ body {
 }
 
 .create-post {
-    width: 600px;
+    width: 100%;
+    max-width: 600px;
     background: #1b1b1b;
     border: 1px solid rgba(255,255,255,0.06);
     border-radius: 12px;
-    padding: 12px;
+    padding: 16px;
     margin: 20px auto 10px;
+    box-sizing: border-box;
 }
 
 .create-header {

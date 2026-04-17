@@ -1,3 +1,5 @@
+import "./style.css"
+
 export interface AuthResponse {
     token: string;
     userId: number;
