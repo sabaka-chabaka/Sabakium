@@ -10,6 +10,7 @@ body {
     color: #e6e6e6;
     height: 100vh;
     overflow: hidden;
+
 }
 
 .hidden { display: none !important; }
@@ -88,6 +89,7 @@ body {
 .feed {
     width: 100%;
     max-width: 600px;
+    scroll-behavior: smooth;
 }
 
 .post {
@@ -283,6 +285,7 @@ body {
     display: flex;
     flex-direction: column;
     gap: 8px;
+    scroll-behavior: smooth;
 }
 
 .msg {
