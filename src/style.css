@@ -516,3 +516,129 @@ body {
     from { transform: scale(0); opacity: 0; }
     to   { transform: scale(1); opacity: 1; }
 }
+
+@media (max-width: 768px) {
+
+    body {
+        overflow: auto;
+    }
+
+    .app-shell {
+        flex-direction: column;
+    }
+
+    .sidebar {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        height: 64px;
+        flex-direction: row;
+        justify-content: space-around;
+        padding: 6px 8px;
+        border-right: none;
+        border-top: 1px solid rgba(255,255,255,0.05);
+        z-index: 100;
+    }
+
+    .sidebar-logo {
+        display: none;
+    }
+
+    .nav-items {
+        flex-direction: row;
+        justify-content: space-around;
+        padding: 0;
+    }
+
+    .nav-item {
+        flex: 1;
+        padding: 6px 0;
+    }
+
+    .nav-item span {
+        font-size: 9px;
+    }
+
+    .tab-content {
+        padding-bottom: 70px;
+    }
+
+    .feed-wrapper {
+        padding: 12px;
+    }
+
+    .feed {
+        max-width: 100%;
+    }
+
+    .post {
+        padding: 12px;
+        border-radius: 10px;
+    }
+
+    .post-content {
+        font-size: 13px;
+    }
+
+    .create-post {
+        padding: 12px;
+    }
+
+    .create-header input {
+        font-size: 13px;
+        padding: 8px;
+    }
+
+    .messenger {
+        display: block;
+    }
+
+    .conv-sidebar {
+        width: 100%;
+        min-width: 100%;
+    }
+
+    .chat-pane {
+        position: fixed;
+        inset: 0;
+        background: #121212;
+        z-index: 50;
+        transform: translateX(100%);
+        transition: transform 0.25s ease;
+    }
+
+    .chat-pane.active {
+        transform: translateX(0);
+    }
+
+    .chat-header {
+        padding: 12px;
+    }
+
+    .chat-messages {
+        padding: 12px;
+    }
+
+    .msg {
+        max-width: 85%;
+    }
+
+    .chat-input-bar {
+        padding: 10px;
+    }
+
+    .chat-input-bar input {
+        font-size: 13px;
+    }
+
+    .modal-card {
+        width: 90%;
+        max-width: 360px;
+    }
+
+    .auth-card {
+        width: 90%;
+        max-width: 340px;
+    }
+}
