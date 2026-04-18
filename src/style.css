@@ -748,19 +748,6 @@ body {
     min-height: 60px;
     max-height: 200px;
     overflow-y: auto;
-
-    display: block;
-    width: 100%;
-    box-sizing: border-box;
-    outline: none;
-    background: #2a2a2a;
-    border: 1px solid rgba(255, 255, 255, 0.06);
-    border-radius: 8px;
-    padding: 8px 12px;
-    color: #e6e6e6;
-
-    vertical-align: top;
-    transition: border-color 0.2s;
 }
 
 .attach-btn {
@@ -867,6 +854,7 @@ body {
     100% { transform: scale(1); }
 }
 
+/* Like display (for non-auth users) */
 .like-display {
     display: flex;
     align-items: center;
@@ -879,3 +867,154 @@ body {
 }
 .like-icon { font-size: 14px; }
 .like-count { font-size: 13px; font-variant-numeric: tabular-nums; }
+
+.comments-btn {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.1);
+    color: #555555;
+    font-size: 13px;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.comments-btn:hover {
+    background: rgba(99,102,241,0.1);
+    border-color: rgba(99,102,241,0.4);
+    color: #818cf8;
+}
+.comments-btn i { font-size: 13px; }
+.comments-count { font-size: 13px; font-variant-numeric: tabular-nums; }
+
+.comments-section {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(255,255,255,0.06);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.comments-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 400px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255,255,255,0.1) transparent;
+}
+
+.comments-loading,
+.comments-empty,
+.comments-login-hint {
+    font-size: 13px;
+    color: #555555;
+    text-align: center;
+    padding: 8px 0;
+}
+
+.comment {
+    background: rgba(255,255,255,0.025);
+    border-radius: 8px;
+    padding: 10px 12px;
+    border: 1px solid rgba(255,255,255,0.05);
+}
+
+.comment-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+}
+
+.comment-avatar {
+    width: 28px !important;
+    height: 28px !important;
+    min-width: 28px !important;
+    border-width: 1.5px !important;
+    font-size: 11px !important;
+}
+
+.comment-meta {
+    flex: 1;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px 6px;
+    align-items: baseline;
+}
+
+.comment-author   { font-size: 13px; font-weight: 600; }
+.comment-username { font-size: 11px; color: #666; }
+.comment-date     { font-size: 11px; color: #555; margin-left: auto; }
+
+.comment-content {
+    font-size: 13px;
+    line-height: 1.5;
+    color: #cfcfcf;
+    word-break: break-word;
+}
+
+.comment-delete {
+    background: transparent;
+    border: none;
+    color: #555;
+    cursor: pointer;
+    font-size: 11px;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: background 0.15s, color 0.15s;
+    flex-shrink: 0;
+}
+.comment-delete:hover {
+    background: rgba(220,38,38,0.15);
+    color: #ef4444;
+}
+
+.comment-composer {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 4px;
+}
+
+.comment-composer-avatar {
+    width: 28px !important;
+    height: 28px !important;
+    min-width: 28px !important;
+    border-width: 1.5px !important;
+    font-size: 11px !important;
+    flex-shrink: 0;
+}
+
+.comment-input {
+    flex: 1;
+    background: #2a2a2a;
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 20px;
+    padding: 7px 14px;
+    color: #e6e6e6;
+    outline: none;
+    font-size: 13px;
+    font-family: Comfortaa, sans-serif;
+    transition: border-color 0.15s;
+}
+.comment-input:focus {
+    border-color: rgba(99,102,241,0.4);
+}
+.comment-input::placeholder { color: #555; }
+
+.comment-submit {
+    padding: 0 14px !important;
+    height: 34px !important;
+    font-size: 12px !important;
+    border-radius: 20px !important;
+    white-space: nowrap;
+}
