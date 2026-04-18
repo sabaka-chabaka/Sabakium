@@ -193,6 +193,44 @@ async function loadOlderMessages() {
     messagesLoading = false;
 }
 
+function renderMessageText(text: string): DocumentFragment {
+    const fragment = document.createDocumentFragment();
+
+    const urlRegex = /(https?:\/\/[^\s]+)/g;
+
+    let lastIndex = 0;
+    let match: RegExpExecArray | null;
+
+    while ((match = urlRegex.exec(text)) !== null) {
+        const url = match[0];
+        const index = match.index;
+
+        if (index > lastIndex) {
+            fragment.appendChild(
+                document.createTextNode(text.slice(lastIndex, index))
+            );
+        }
+
+        const a = document.createElement("a");
+        a.href = url;
+        a.textContent = url;
+        a.target = "_blank";
+        a.rel = "noopener noreferrer";
+
+        fragment.appendChild(a);
+
+        lastIndex = index + url.length;
+    }
+
+    if (lastIndex < text.length) {
+        fragment.appendChild(
+            document.createTextNode(text.slice(lastIndex))
+        );
+    }
+
+    return fragment;
+}
+
 async function buildMessageEl(msg: EncryptedMessageDto): Promise<HTMLElement> {
     const me = myId();
     const isOwn = msg.senderId === me;
@@ -216,7 +254,17 @@ async function buildMessageEl(msg: EncryptedMessageDto): Promise<HTMLElement> {
 
     const bubbleEl = document.createElement("div");
     bubbleEl.className = "msg-bubble";
-    bubbleEl.innerHTML = `<div class="msg-text">${esc(text)}</div><div class="msg-time">${time}</div>`;
+
+    const textEl = document.createElement("div");
+    textEl.className = "msg-text";
+    textEl.appendChild(renderMessageText(text));
+
+    const timeEl = document.createElement("div");
+    timeEl.className = "msg-time";
+    timeEl.textContent = time;
+
+    bubbleEl.appendChild(textEl);
+    bubbleEl.appendChild(timeEl);
 
     if (isOwn) {
         el.appendChild(bubbleEl);
