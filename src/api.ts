@@ -16,6 +16,9 @@ export interface PostDto {
     username: string;
     displayName: string;
     avatarUrl?: string | null;
+    imageUrl?: string | null;
+    likesCount: number;
+    likedByMe: boolean;
 }
 
 export interface ApiError {
@@ -69,12 +72,29 @@ export async function apiFetchPosts(before?: number, limit = 20): Promise<PostDt
     return request<PostDto[]>(`/posts?${params}`);
 }
 
-export async function apiCreatePost(content: string): Promise<PostDto> {
-    return request<PostDto>("/posts", { method: "POST", body: JSON.stringify({ content }) }, true);
+export async function apiCreatePost(content: string, image?: File | null): Promise<PostDto> {
+    const session = loadSession();
+    const form = new FormData();
+    form.append("content", content);
+    if (image) form.append("image", image);
+    const res = await fetch(`${BASE_URL}/posts`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${session?.token}` },
+        body: form,
+    });
+    if (!res.ok) {
+        const body = await res.json().catch(() => ({ error: "Ошибка сети" }));
+        throw new Error(body.error ?? `HTTP ${res.status}`);
+    }
+    return res.json();
 }
 
 export async function apiDeletePost(id: number): Promise<void> {
     await request<void>(`/posts/${id}`, { method: "DELETE" }, true);
+}
+
+export async function apiLikePost(id: number): Promise<{ liked: boolean; likesCount: number }> {
+    return request(`/posts/${id}/like`, { method: "POST" }, true);
 }
 
 export async function apiGetProfile(): Promise<{ id: number; username: string; displayName: string; avatarUrl: string | null }> {

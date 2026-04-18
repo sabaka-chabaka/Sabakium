@@ -9,11 +9,12 @@ let connection: signalR.HubConnection | null = null;
 export type FeedEventMap = {
     newPost: (post: PostDto) => void;
     deletePost: (id: number) => void;
+    updateLikes: (data: { postId: number; likesCount: number }) => void;
 };
 
 type Listeners = { [K in keyof FeedEventMap]: FeedEventMap[K][] };
 
-const listeners: Listeners = { newPost: [], deletePost: [] };
+const listeners: Listeners = { newPost: [], deletePost: [], updateLikes: [] };
 
 export function onFeedEvent<K extends keyof FeedEventMap>(
     event: K,
@@ -39,6 +40,10 @@ export async function connectFeed() {
 
     connection.on("DeletePost", (id: number) => {
         listeners.deletePost.forEach((fn) => fn(id));
+    });
+
+    connection.on("UpdateLikes", (data: { postId: number; likesCount: number }) => {
+        listeners.updateLikes.forEach((fn) => fn(data));
     });
 
     await connection.start();
