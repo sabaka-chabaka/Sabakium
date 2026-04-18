@@ -134,10 +134,7 @@ function fitImage() {
     const iw = rotated ? cropImg.naturalHeight : cropImg.naturalWidth;
     const ih = rotated ? cropImg.naturalWidth  : cropImg.naturalHeight;
     imgScale = Math.max(SIZE / iw, SIZE / ih);
-    imgOffset = {
-        x: (SIZE - iw * imgScale) / 2,
-        y: (SIZE - ih * imgScale) / 2,
-    };
+    imgOffset = { x: SIZE / 2, y: SIZE / 2 };
 }
 
 function drawCrop() {
@@ -146,20 +143,15 @@ function drawCrop() {
     ctx.translate(SIZE / 2, SIZE / 2);
     ctx.rotate((cropRotation * Math.PI) / 180);
 
-    const rotated = cropRotation % 180 !== 0;
-    const iw = rotated ? cropImg.naturalHeight : cropImg.naturalWidth;
-    const ih = rotated ? cropImg.naturalWidth  : cropImg.naturalHeight;
-    const ox = imgOffset.x - (SIZE - iw * imgScale) / 2;
-    const oy = imgOffset.y - (SIZE - ih * imgScale) / 2;
+    const cos = Math.cos((-cropRotation * Math.PI) / 180);
+    const sin = Math.sin((-cropRotation * Math.PI) / 180);
+    const dx = (imgOffset.x - SIZE / 2) * cos - (imgOffset.y - SIZE / 2) * sin;
+    const dy = (imgOffset.x - SIZE / 2) * sin + (imgOffset.y - SIZE / 2) * cos;
 
     ctx.drawImage(
         cropImg,
-        -(SIZE / 2) - ox / imgScale,
-        -(SIZE / 2) - oy / imgScale,
-        cropImg.naturalWidth,
-        cropImg.naturalHeight,
-        -(cropImg.naturalWidth * imgScale) / 2,
-        -(cropImg.naturalHeight * imgScale) / 2,
+        dx - (cropImg.naturalWidth * imgScale) / 2,
+        dy - (cropImg.naturalHeight * imgScale) / 2,
         cropImg.naturalWidth * imgScale,
         cropImg.naturalHeight * imgScale,
     );
@@ -197,19 +189,18 @@ cropConfirm.addEventListener("click", async () => {
     fc.translate(200, 200);
     fc.rotate((cropRotation * Math.PI) / 180);
 
-    const rotated = cropRotation % 180 !== 0;
-    const iw = rotated ? cropImg.naturalHeight : cropImg.naturalWidth;
-    const ih = rotated ? cropImg.naturalWidth  : cropImg.naturalHeight;
     const scale = (imgScale / SIZE) * 400;
-    const ox = imgOffset.x - (SIZE - iw * imgScale) / 2;
-    const oy = imgOffset.y - (SIZE - ih * imgScale) / 2;
+    const cos = Math.cos((-cropRotation * Math.PI) / 180);
+    const sin = Math.sin((-cropRotation * Math.PI) / 180);
+    const dx = ((imgOffset.x - SIZE / 2) * cos - (imgOffset.y - SIZE / 2) * sin) * (400 / SIZE);
+    const dy = ((imgOffset.x - SIZE / 2) * sin + (imgOffset.y - SIZE / 2) * cos) * (400 / SIZE);
 
     fc.drawImage(
         cropImg,
-        -(200) - (ox / imgScale) * (400 / SIZE),
-        -(200) - (oy / imgScale) * (400 / SIZE),
+        dx - (cropImg.naturalWidth * scale) / 2,
+        dy - (cropImg.naturalHeight * scale) / 2,
         cropImg.naturalWidth * scale,
-        cropImg.naturalHeight * scale,
+        cropImg.naturalHeight * scale
     );
     fc.restore();
 
@@ -237,11 +228,13 @@ cropConfirm.addEventListener("click", async () => {
 
 cropCanvas.addEventListener("mousedown", e => {
     isDragging = true;
-    dragStart = { x: e.clientX - imgOffset.x, y: e.clientY - imgOffset.y };
+    const r = cropCanvas.getBoundingClientRect();
+    dragStart = { x: e.clientX - r.left - imgOffset.x, y: e.clientY - r.top - imgOffset.y };
 });
 window.addEventListener("mousemove", e => {
     if (!isDragging) return;
-    imgOffset = { x: e.clientX - dragStart.x, y: e.clientY - dragStart.y };
+    const r = cropCanvas.getBoundingClientRect();
+    imgOffset = { x: e.clientX - r.left - dragStart.x, y: e.clientY - r.top - dragStart.y };
     drawCrop();
 });
 window.addEventListener("mouseup", () => { isDragging = false; });
