@@ -19,6 +19,17 @@ export interface PostDto {
     imageUrl?: string | null;
     likesCount: number;
     likedByMe: boolean;
+    commentsCount: number;
+}
+
+export interface CommentDto {
+    id: number;
+    content: string;
+    createdAt: string;
+    userId: number;
+    username: string;
+    displayName: string;
+    avatarUrl?: string | null;
 }
 
 export interface ApiError {
@@ -95,6 +106,18 @@ export async function apiDeletePost(id: number): Promise<void> {
 
 export async function apiLikePost(id: number): Promise<{ liked: boolean; likesCount: number }> {
     return request(`/posts/${id}/like`, { method: "POST" }, true);
+}
+
+export async function apiFetchComments(postId: number): Promise<CommentDto[]> {
+    return request<CommentDto[]>(`/posts/${postId}/comments`);
+}
+
+export async function apiCreateComment(postId: number, content: string): Promise<CommentDto> {
+    return request<CommentDto>(`/posts/${postId}/comments`, { method: "POST", body: JSON.stringify({ content }) }, true);
+}
+
+export async function apiDeleteComment(postId: number, commentId: number): Promise<void> {
+    await request<void>(`/posts/${postId}/comments/${commentId}`, { method: "DELETE" }, true);
 }
 
 export async function apiGetProfile(): Promise<{ id: number; username: string; displayName: string; avatarUrl: string | null }> {
