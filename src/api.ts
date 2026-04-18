@@ -5,6 +5,7 @@ export interface AuthResponse {
     userId: number;
     username: string;
     displayName: string;
+    avatarUrl: string | null;
 }
 
 export interface PostDto {
@@ -14,6 +15,7 @@ export interface PostDto {
     userId: number;
     username: string;
     displayName: string;
+    avatarUrl?: string | null;
 }
 
 export interface ApiError {
@@ -21,7 +23,6 @@ export interface ApiError {
 }
 
 const BASE_URL = "http://localhost:5000/api";
-
 const SESSION_KEY = "sabakium_session";
 
 export function saveSession(data: AuthResponse) {
@@ -37,50 +38,29 @@ export function clearSession() {
     localStorage.removeItem(SESSION_KEY);
 }
 
-async function request<T>(
-    path: string,
-    options: RequestInit = {},
-    withAuth = false
-): Promise<T> {
+async function request<T>(path: string, options: RequestInit = {}, withAuth = false): Promise<T> {
     const headers: Record<string, string> = {
         "Content-Type": "application/json",
         ...(options.headers as Record<string, string>),
     };
-
     if (withAuth) {
         const session = loadSession();
         if (session) headers["Authorization"] = `Bearer ${session.token}`;
     }
-
     const res = await fetch(`${BASE_URL}${path}`, { ...options, headers });
-
     if (!res.ok) {
         const body: ApiError = await res.json().catch(() => ({ error: "Ошибка сети" }));
         throw new Error(body.error ?? `HTTP ${res.status}`);
     }
-
     return res.json() as Promise<T>;
 }
 
-export async function apiRegister(
-    username: string,
-    displayName: string,
-    password: string
-): Promise<AuthResponse> {
-    return request<AuthResponse>("/auth/register", {
-        method: "POST",
-        body: JSON.stringify({ username, displayName, password }),
-    });
+export async function apiRegister(username: string, displayName: string, password: string): Promise<AuthResponse> {
+    return request<AuthResponse>("/auth/register", { method: "POST", body: JSON.stringify({ username, displayName, password }) });
 }
 
-export async function apiLogin(
-    username: string,
-    password: string
-): Promise<AuthResponse> {
-    return request<AuthResponse>("/auth/login", {
-        method: "POST",
-        body: JSON.stringify({ username, password }),
-    });
+export async function apiLogin(username: string, password: string): Promise<AuthResponse> {
+    return request<AuthResponse>("/auth/login", { method: "POST", body: JSON.stringify({ username, password }) });
 }
 
 export async function apiFetchPosts(before?: number, limit = 20): Promise<PostDto[]> {
@@ -90,12 +70,37 @@ export async function apiFetchPosts(before?: number, limit = 20): Promise<PostDt
 }
 
 export async function apiCreatePost(content: string): Promise<PostDto> {
-    return request<PostDto>("/posts", {
-        method: "POST",
-        body: JSON.stringify({ content }),
-    }, true);
+    return request<PostDto>("/posts", { method: "POST", body: JSON.stringify({ content }) }, true);
 }
 
 export async function apiDeletePost(id: number): Promise<void> {
     await request<void>(`/posts/${id}`, { method: "DELETE" }, true);
+}
+
+export async function apiGetProfile(): Promise<{ id: number; username: string; displayName: string; avatarUrl: string | null }> {
+    return request("/profile/me", {}, true);
+}
+
+export async function apiUpdateDisplayName(displayName: string): Promise<{ displayName: string }> {
+    return request("/profile/display-name", { method: "PATCH", body: JSON.stringify({ displayName }) }, true);
+}
+
+export async function apiUploadAvatar(file: File): Promise<{ avatarUrl: string }> {
+    const session = loadSession();
+    const form = new FormData();
+    form.append("file", file);
+    const res = await fetch(`${BASE_URL}/profile/avatar`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${session?.token}` },
+        body: form,
+    });
+    if (!res.ok) {
+        const body = await res.json().catch(() => ({ error: "Ошибка загрузки" }));
+        throw new Error(body.error ?? `HTTP ${res.status}`);
+    }
+    return res.json();
+}
+
+export function avatarSrc(url: string | null | undefined): string | null {
+    return url ?? null;
 }
