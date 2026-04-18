@@ -127,6 +127,18 @@ export async function apiCheckOnline(userId: number): Promise<{ online: boolean 
     return get(`/chat/online/${userId}`);
 }
 
+export async function apiDeleteChatMessage(messageId: number): Promise<void> {
+    const session = loadSession();
+    const res = await fetch(`${BASE_URL}/chat/messages/${messageId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${session?.token}` },
+    });
+    if (!res.ok) {
+        const body = await res.json().catch(() => ({ error: "Ошибка" }));
+        throw new Error(body.error ?? `HTTP ${res.status}`);
+    }
+}
+
 export async function apiUploadChatFile(file: File): Promise<{
     url: string; fileName: string; fileSize: number; mimeType: string;
 }> {

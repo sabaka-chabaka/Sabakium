@@ -4,6 +4,7 @@ import {
     apiSearchUsers,
     apiCheckOnline,
     apiUploadChatFile,
+    apiDeleteChatMessage,
     connectChat,
     decryptMessage,
     decodeFileMessage,
@@ -148,6 +149,51 @@ function formatFileSize(bytes: number): string {
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} КБ`;
     return `${(bytes / 1024 / 1024).toFixed(1)} МБ`;
 }
+
+let ctxMenu: HTMLElement | null = null;
+
+function closeCtxMenu() {
+    ctxMenu?.remove();
+    ctxMenu = null;
+}
+
+function showCtxMenu(x: number, y: number, items: { label: string; icon: string; danger?: boolean; action: () => void }[]) {
+    closeCtxMenu();
+
+    const menu = document.createElement("div");
+    menu.className = "ctx-menu";
+    menu.innerHTML = items.map((item, i) =>
+        `<button class="ctx-menu-item${item.danger ? " ctx-danger" : ""}" data-i="${i}">
+            <span class="ctx-icon">${item.icon}</span>${item.label}
+        </button>`
+    ).join("");
+
+    menu.querySelectorAll<HTMLButtonElement>(".ctx-menu-item").forEach(btn => {
+        btn.addEventListener("click", () => {
+            const i = parseInt(btn.dataset["i"]!);
+            items[i]!.action();
+            closeCtxMenu();
+        });
+    });
+
+    document.body.appendChild(menu);
+    ctxMenu = menu;
+
+    const rect = menu.getBoundingClientRect();
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    let left = x, top = y;
+    if (left + 180 > vw) left = vw - 188;
+    if (top + rect.height + 8 > vh) top = y - rect.height;
+    menu.style.left = `${left}px`;
+    menu.style.top  = `${top}px`;
+    menu.classList.add("ctx-menu-visible");
+}
+
+document.addEventListener("click",      () => closeCtxMenu(), { capture: true });
+document.addEventListener("contextmenu",() => closeCtxMenu(), { capture: false });
+document.addEventListener("keydown", e => { if (e.key === "Escape") closeCtxMenu(); });
+document.addEventListener("scroll",    () => closeCtxMenu(), { capture: true });
 
 function fileIcon(mimeType: string): string {
     if (mimeType.startsWith("image/")) return "🖼️";
@@ -358,6 +404,32 @@ async function buildMessageEl(msg: EncryptedMessageDto): Promise<HTMLElement> {
 
     if (isOwn) { el.appendChild(bubbleEl); el.appendChild(avatarEl); }
     else       { el.appendChild(avatarEl); el.appendChild(bubbleEl); }
+
+    bubbleEl.addEventListener("contextmenu", e => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        const items = [];
+
+        if (isOwn) {
+            items.push({
+                label: "Удалить сообщение",
+                icon: "🗑",
+                danger: true,
+                action: async () => {
+                    try {
+                        await apiDeleteChatMessage(msg.id);
+                        el.classList.add("msg-deleting");
+                        el.addEventListener("animationend", () => el.remove(), { once: true });
+                    } catch (err) {
+                        alert((err as Error).message);
+                    }
+                },
+            });
+        }
+
+        if (items.length > 0) showCtxMenu(e.clientX, e.clientY, items);
+    });
 
     return el;
 }

@@ -1208,3 +1208,53 @@ body {
     transition: background 0.15s;
 }
 .msg-file-download:hover { background: rgba(99,102,241,0.3); }
+
+.ctx-menu {
+    position: fixed;
+    z-index: 9999;
+    min-width: 180px;
+    background: #242424;
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 10px;
+    padding: 4px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+    opacity: 0;
+    transform: scale(0.95);
+    transform-origin: top left;
+    transition: opacity 0.1s ease, transform 0.1s ease;
+    pointer-events: none;
+}
+.ctx-menu.ctx-menu-visible {
+    opacity: 1;
+    transform: scale(1);
+    pointer-events: all;
+}
+
+.ctx-menu-item {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    background: transparent;
+    border: none;
+    border-radius: 7px;
+    color: #d4d4d4;
+    font-size: 13px;
+    font-family: Comfortaa, sans-serif;
+    cursor: pointer;
+    text-align: left;
+    transition: background 0.12s;
+}
+.ctx-menu-item:hover { background: rgba(255,255,255,0.07); }
+.ctx-menu-item.ctx-danger { color: #f87171; }
+.ctx-menu-item.ctx-danger:hover { background: rgba(239,68,68,0.12); }
+
+.ctx-icon { font-size: 15px; width: 20px; text-align: center; flex-shrink: 0; }
+
+.msg-deleting {
+    animation: msg-fade-out 0.25s ease forwards;
+}
+@keyframes msg-fade-out {
+    to { opacity: 0; transform: scale(0.9); max-height: 0; margin: 0; padding: 0; }
+}
