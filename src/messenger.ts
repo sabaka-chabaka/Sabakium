@@ -13,25 +13,27 @@ import {
 import { loadSession } from "./api";
 
 let currentPartnerId: number | null = null;
+let currentPartnerAvatarUrl: string | null = null;
 let chatConnected = false;
 let messagesOldestId: number | undefined;
 let messagesHasMore = true;
 let messagesLoading = false;
 let unreadCount = 0;
 
-const convListEl       = document.getElementById("conv-list")!;
-const chatPaneEl       = document.getElementById("chat-pane")!;
-const chatEmptyEl      = document.getElementById("chat-empty")!;
-const chatMessagesEl   = document.getElementById("chat-messages")!;
-const chatInputEl      = document.getElementById("chat-input") as HTMLInputElement;
-const chatSendBtn      = document.getElementById("chat-send")!;
-const chatPartnerEl    = document.getElementById("chat-partner-name")!;
-const newChatBtn       = document.getElementById("new-chat-btn")!;
-const newChatModal     = document.getElementById("new-chat-modal")!;
-const newChatClose     = document.getElementById("new-chat-close")!;
-const newChatSearchEl  = document.getElementById("new-chat-search") as HTMLInputElement;
-const newChatResultsEl = document.getElementById("new-chat-results")!;
-const messengerNavBtn  = document.querySelector<HTMLElement>('.nav-item[data-tab="messenger"]')!;
+const convListEl        = document.getElementById("conv-list")!;
+const chatPaneEl        = document.getElementById("chat-pane")!;
+const chatEmptyEl       = document.getElementById("chat-empty")!;
+const chatMessagesEl    = document.getElementById("chat-messages")!;
+const chatInputEl       = document.getElementById("chat-input") as HTMLInputElement;
+const chatSendBtn       = document.getElementById("chat-send")!;
+const chatPartnerEl     = document.getElementById("chat-partner-name")!;
+const chatPartnerAvatar = document.getElementById("chat-partner-avatar")!;
+const newChatBtn        = document.getElementById("new-chat-btn")!;
+const newChatModal      = document.getElementById("new-chat-modal")!;
+const newChatClose      = document.getElementById("new-chat-close")!;
+const newChatSearchEl   = document.getElementById("new-chat-search") as HTMLInputElement;
+const newChatResultsEl  = document.getElementById("new-chat-results")!;
+const messengerNavBtn   = document.querySelector<HTMLElement>('.nav-item[data-tab="messenger"]')!;
 
 function esc(t: string) {
     return t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -39,6 +41,18 @@ function esc(t: string) {
 
 function myId(): number | undefined {
     return loadSession()?.userId;
+}
+
+function applyBg(el: HTMLElement, url: string | null | undefined) {
+    if (url) {
+        el.style.backgroundImage = `url('${url}')`;
+        el.style.backgroundSize = "cover";
+        el.style.backgroundPosition = "center";
+        el.classList.add("has-avatar");
+    } else {
+        el.style.backgroundImage = "";
+        el.classList.remove("has-avatar");
+    }
 }
 
 function isMessengerVisible(): boolean {
@@ -88,19 +102,27 @@ async function refreshConversations() {
         const el = document.createElement("div");
         el.className = "conv-item" + (c.partnerId === currentPartnerId ? " active" : "");
         el.dataset["pid"] = String(c.partnerId);
-        el.innerHTML = `
-            <div class="conv-avatar"></div>
-            <div class="conv-info">
-                <span class="conv-name">${esc(c.partnerDisplayName)}</span>
-                <span class="conv-preview">${isMine ? "Вы: " : ""}${esc(preview.substring(0, 40))}${preview.length > 40 ? "…" : ""}</span>
-            </div>`;
-        el.addEventListener("click", () => openConversation(c.partnerId, c.partnerDisplayName));
+
+        const avatarDiv = document.createElement("div");
+        avatarDiv.className = "conv-avatar";
+        applyBg(avatarDiv, c.partnerAvatarUrl);
+
+        const infoDiv = document.createElement("div");
+        infoDiv.className = "conv-info";
+        infoDiv.innerHTML = `
+            <span class="conv-name">${esc(c.partnerDisplayName)}</span>
+            <span class="conv-preview">${isMine ? "Вы: " : ""}${esc(preview.substring(0, 40))}${preview.length > 40 ? "…" : ""}</span>`;
+
+        el.appendChild(avatarDiv);
+        el.appendChild(infoDiv);
+        el.addEventListener("click", () => openConversation(c.partnerId, c.partnerDisplayName, c.partnerAvatarUrl ?? null));
         convListEl.append(el);
     }
 }
 
-async function openConversation(partnerId: number, partnerName: string) {
+async function openConversation(partnerId: number, partnerName: string, partnerAvatar: string | null = null) {
     currentPartnerId = partnerId;
+    currentPartnerAvatarUrl = partnerAvatar;
     messagesOldestId = undefined;
     messagesHasMore = true;
     messagesLoading = false;
@@ -109,6 +131,7 @@ async function openConversation(partnerId: number, partnerName: string) {
     chatPaneEl.classList.remove("hidden");
     chatEmptyEl.classList.add("hidden");
     chatPartnerEl.textContent = partnerName;
+    applyBg(chatPartnerAvatar as HTMLElement, partnerAvatar);
 
     document.querySelectorAll(".conv-item").forEach(el =>
         el.classList.toggle("active", el.getAttribute("data-pid") === String(partnerId))
@@ -140,14 +163,11 @@ async function loadOlderMessages() {
 
     if (msgs.length > 0) {
         messagesOldestId = msgs[msgs.length - 1]!.id;
-
         const els = await Promise.all([...msgs].reverse().map(m => buildMessageEl(m)));
         const frag = document.createDocumentFragment();
         els.forEach(el => frag.appendChild(el));
         chatMessagesEl.insertBefore(frag, chatMessagesEl.firstChild);
-
-        // Keep scroll position when prepending older messages
-        if (messagesOldestId !== undefined && prevScrollHeight > 0) {
+        if (prevScrollHeight > 0) {
             chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight - prevScrollHeight;
         }
     }
@@ -156,20 +176,38 @@ async function loadOlderMessages() {
 }
 
 async function buildMessageEl(msg: EncryptedMessageDto): Promise<HTMLElement> {
-    const isOwn = msg.senderId === myId();
+    const me = myId();
+    const isOwn = msg.senderId === me;
     let text = "[зашифровано]";
     try { text = await decryptMessage(msg.ciphertext, msg.iv, msg.authTag); } catch {}
+
+    const session = loadSession();
+    const avatarUrl = isOwn
+        ? (session?.avatarUrl ?? null)
+        : (msg.senderAvatarUrl ?? currentPartnerAvatarUrl ?? null);
 
     const el = document.createElement("div");
     el.className = "msg " + (isOwn ? "msg-own" : "msg-other");
     el.dataset["id"] = String(msg.id);
 
     const time = new Date(msg.createdAt).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
-    el.innerHTML = `
-        <div class="msg-bubble">
-            <div class="msg-text">${esc(text)}</div>
-            <div class="msg-time">${time}</div>
-        </div>`;
+
+    const avatarEl = document.createElement("div");
+    avatarEl.className = "msg-avatar";
+    applyBg(avatarEl, avatarUrl);
+
+    const bubbleEl = document.createElement("div");
+    bubbleEl.className = "msg-bubble";
+    bubbleEl.innerHTML = `<div class="msg-text">${esc(text)}</div><div class="msg-time">${time}</div>`;
+
+    if (isOwn) {
+        el.appendChild(bubbleEl);
+        el.appendChild(avatarEl);
+    } else {
+        el.appendChild(avatarEl);
+        el.appendChild(bubbleEl);
+    }
+
     return el;
 }
 
@@ -178,7 +216,7 @@ async function handleIncoming(msg: EncryptedMessageDto) {
     const openConvId = currentPartnerId;
 
     const belongsToOpenConv = openConvId !== null && (
-        (msg.senderId === me      && msg.recipientId === openConvId) ||
+        (msg.senderId === me         && msg.recipientId === openConvId) ||
         (msg.senderId === openConvId && msg.recipientId === me)
     );
 
@@ -203,7 +241,7 @@ async function sendMessage() {
     try {
         await sendEncryptedMessage(currentPartnerId, text);
     } catch (e) {
-        chatInputEl.value = text; // restore on error
+        chatInputEl.value = text;
         alert((e as Error).message);
     } finally {
         chatSendBtn.removeAttribute("disabled");
@@ -235,13 +273,25 @@ async function searchAndRender(q: string) {
     for (const u of users) {
         const el = document.createElement("div");
         el.className = "user-result";
-        el.innerHTML = `
-            <div class="conv-avatar small"></div>
-            <span class="conv-name">${esc(u.displayName)}</span>
-            <span class="conv-uname">@${esc(u.username)}</span>`;
+
+        const avatarEl = document.createElement("div");
+        avatarEl.className = "conv-avatar small";
+        applyBg(avatarEl, u.avatarUrl);
+
+        const nameEl = document.createElement("span");
+        nameEl.className = "conv-name";
+        nameEl.textContent = u.displayName;
+
+        const unameEl = document.createElement("span");
+        unameEl.className = "conv-uname";
+        unameEl.textContent = `@${u.username}`;
+
+        el.appendChild(avatarEl);
+        el.appendChild(nameEl);
+        el.appendChild(unameEl);
         el.addEventListener("click", () => {
             closeNewChatModal();
-            openConversation(u.id, u.displayName);
+            openConversation(u.id, u.displayName, u.avatarUrl ?? null);
         });
         newChatResultsEl.append(el);
     }
@@ -258,6 +308,9 @@ export async function initMessenger() {
         onChatMessage(handleIncoming);
         chatConnected = true;
     }
+
+    const chatInputAvatar = document.getElementById("chat-input-avatar");
+    if (chatInputAvatar) applyBg(chatInputAvatar, session.avatarUrl ?? null);
 
     await refreshConversations();
 

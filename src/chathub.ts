@@ -25,16 +25,14 @@ export async function initCryptoKey(passphrase: string) {
 export async function encryptMessage(plaintext: string): Promise<{ ciphertext: string; iv: string; authTag: string }> {
     if (!_cryptoKey) throw new Error("Crypto key not initialized");
     const iv = crypto.getRandomValues(new Uint8Array(12));
-    const enc = new TextEncoder();
     const encrypted = await crypto.subtle.encrypt(
         { name: "AES-GCM", iv, tagLength: 128 },
         _cryptoKey,
-        enc.encode(plaintext)
+        new TextEncoder().encode(plaintext)
     );
     const full = new Uint8Array(encrypted);
     const ciphertextBytes = full.slice(0, full.length - 16);
     const authTagBytes    = full.slice(full.length - 16);
-
     return {
         ciphertext: btoa(String.fromCharCode(...ciphertextBytes)),
         iv:         btoa(String.fromCharCode(...iv)),
@@ -47,11 +45,9 @@ export async function decryptMessage(ciphertext: string, iv: string, authTag: st
     const ct  = Uint8Array.from(atob(ciphertext), c => c.charCodeAt(0));
     const ivB = Uint8Array.from(atob(iv),         c => c.charCodeAt(0));
     const tag = Uint8Array.from(atob(authTag),    c => c.charCodeAt(0));
-
     const combined = new Uint8Array(ct.length + tag.length);
     combined.set(ct);
     combined.set(tag, ct.length);
-
     const decrypted = await crypto.subtle.decrypt(
         { name: "AES-GCM", iv: ivB, tagLength: 128 },
         _cryptoKey,
@@ -65,6 +61,7 @@ export interface EncryptedMessageDto {
     senderId: number;
     senderUsername: string;
     senderDisplayName: string;
+    senderAvatarUrl?: string | null;
     recipientId: number;
     ciphertext: string;
     iv: string;
@@ -76,6 +73,7 @@ export interface ConversationDto {
     partnerId: number;
     partnerUsername: string;
     partnerDisplayName: string;
+    partnerAvatarUrl?: string | null;
     latestMessageId: number;
     latestCiphertext: string;
     latestIv: string;
@@ -88,6 +86,7 @@ export interface UserDto {
     id: number;
     username: string;
     displayName: string;
+    avatarUrl?: string | null;
 }
 
 function authHeader(): Record<string, string> {
