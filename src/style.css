@@ -9,6 +9,7 @@ body {
     color: #e6e6e6;
     height: 100vh;
     overflow: hidden;
+    scroll-behavior: smooth;
 }
 
 .hidden { display: none !important; }
@@ -144,7 +145,7 @@ body {
     align-items: center;
     padding: 20px;
 }
-.feed { width: 100%; max-width: 600px; }
+.feed { width: 100%; max-width: 600px; scroll-behavior: smooth; }
 
 .post {
     background: #1b1b1b;
@@ -305,6 +306,7 @@ body {
     display: flex;
     flex-direction: column;
     gap: 6px;
+    scroll-behavior: smooth;
 }
 
 .msg {
