@@ -67,7 +67,6 @@
             </button>
         </div>
 
-        <!-- Profile block at bottom -->
         <div class="sidebar-profile" id="sidebar-profile-btn" title="Настройки профиля">
             <div class="avatar my-avatar sidebar-avatar" id="sidebar-avatar"></div>
             <span class="sidebar-user-name" id="sidebar-user-name"></span>
@@ -109,14 +108,27 @@
                 <div class="chat-header">
                     <button class="chat-back-btn" id="chat-back-btn"><i class="fa-solid fa-chevron-left"></i></button>
                     <div class="conv-avatar" id="chat-partner-avatar"></div>
-                    <span id="chat-partner-name" class="chat-partner-name">—</span>
+                    <div class="chat-partner-info">
+                        <span id="chat-partner-name" class="chat-partner-name">—</span>
+                        <span id="chat-partner-status" class="chat-partner-status"></span>
+                    </div>
                     <div class="chat-enc-badge" title="AES-GCM шифрование end-to-end">
                         <i class="fa-solid fa-lock"></i> E2E
                     </div>
                 </div>
-                <div class="chat-messages" id="chat-messages"></div>
+                <div class="chat-messages" id="chat-messages">
+                    <div id="chat-typing-indicator" class="chat-typing-indicator hidden">
+                        <span class="typing-dot"></span>
+                        <span class="typing-dot"></span>
+                        <span class="typing-dot"></span>
+                    </div>
+                </div>
                 <div class="chat-input-bar">
                     <div class="avatar my-avatar chat-input-avatar" id="chat-input-avatar"></div>
+                    <button class="btn icon chat-attach-btn" id="chat-attach-btn" title="Прикрепить файл">
+                        <i class="fa-solid fa-paperclip"></i>
+                    </button>
+                    <input type="file" id="chat-file-input" class="hidden"/>
                     <input type="text" id="chat-input" placeholder="Сообщение…"/>
                     <button class="btn submit" id="chat-send"><i class="fa-solid fa-paper-plane"></i></button>
                 </div>
