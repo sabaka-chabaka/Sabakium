@@ -748,6 +748,19 @@ body {
     min-height: 60px;
     max-height: 200px;
     overflow-y: auto;
+
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+    outline: none;
+    background: #2a2a2a;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 8px;
+    padding: 8px 12px;
+    color: #e6e6e6;
+
+    vertical-align: top;
+    transition: border-color 0.2s;
 }
 
 .attach-btn {
