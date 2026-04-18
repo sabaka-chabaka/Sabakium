@@ -89,6 +89,15 @@ export interface UserDto {
     avatarUrl?: string | null;
 }
 
+export type PresenceHandler   = (userId: number, online: boolean) => void;
+export type TypingHandler     = (userId: number, isTyping: boolean) => void;
+
+const presenceHandlers: PresenceHandler[] = [];
+const typingHandlers: TypingHandler[] = [];
+
+export function onPresenceChange(fn: PresenceHandler) { presenceHandlers.push(fn); }
+export function onTypingChange(fn: TypingHandler)     { typingHandlers.push(fn); }
+
 function authHeader(): Record<string, string> {
     const s = loadSession();
     return s ? { Authorization: `Bearer ${s.token}` } : {};
@@ -114,6 +123,28 @@ export async function apiSearchUsers(q: string): Promise<UserDto[]> {
     return get(`/chat/users?q=${encodeURIComponent(q)}`);
 }
 
+export async function apiCheckOnline(userId: number): Promise<{ online: boolean }> {
+    return get(`/chat/online/${userId}`);
+}
+
+export async function apiUploadChatFile(file: File): Promise<{
+    url: string; fileName: string; fileSize: number; mimeType: string;
+}> {
+    const session = loadSession();
+    const form = new FormData();
+    form.append("file", file);
+    const res = await fetch(`${BASE_URL}/chat/upload`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${session?.token}` },
+        body: form,
+    });
+    if (!res.ok) {
+        const body = await res.json().catch(() => ({ error: "Ошибка загрузки" }));
+        throw new Error(body.error ?? `HTTP ${res.status}`);
+    }
+    return res.json();
+}
+
 let connection: signalR.HubConnection | null = null;
 const messageHandlers: ((msg: EncryptedMessageDto) => void)[] = [];
 
@@ -133,6 +164,18 @@ export async function connectChat() {
         messageHandlers.forEach(fn => fn(msg));
     });
 
+    connection.on("UserOnline", (userId: number) => {
+        presenceHandlers.forEach(fn => fn(userId, true));
+    });
+
+    connection.on("UserOffline", (userId: number) => {
+        presenceHandlers.forEach(fn => fn(userId, false));
+    });
+
+    connection.on("UserTyping", (userId: number, isTyping: boolean) => {
+        typingHandlers.forEach(fn => fn(userId, isTyping));
+    });
+
     await connection.start();
     console.log("[ChatHub] connected");
 }
@@ -141,4 +184,22 @@ export async function sendEncryptedMessage(recipientId: number, plaintext: strin
     if (!connection) throw new Error("Not connected");
     const { ciphertext, iv, authTag } = await encryptMessage(plaintext);
     await connection.invoke("SendMessage", recipientId, ciphertext, iv, authTag);
+}
+
+export async function sendTyping(recipientId: number, isTyping: boolean) {
+    if (!connection) return;
+    try { await connection.invoke("SetTyping", recipientId, isTyping); } catch {}
+}
+
+export function encodeFileMessage(meta: {
+    url: string; fileName: string; fileSize: number; mimeType: string;
+}): string {
+    return `__FILE__${JSON.stringify(meta)}`;
+}
+
+export function decodeFileMessage(text: string): {
+    url: string; fileName: string; fileSize: number; mimeType: string;
+} | null {
+    if (!text.startsWith("__FILE__")) return null;
+    try { return JSON.parse(text.slice(8)); } catch { return null; }
 }
