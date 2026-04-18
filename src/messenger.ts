@@ -34,6 +34,20 @@ const newChatClose      = document.getElementById("new-chat-close")!;
 const newChatSearchEl   = document.getElementById("new-chat-search") as HTMLInputElement;
 const newChatResultsEl  = document.getElementById("new-chat-results")!;
 const messengerNavBtn   = document.querySelector<HTMLElement>('.nav-item[data-tab="messenger"]')!;
+const messengerEl       = document.getElementById("messenger")!;
+const chatBackBtn       = document.getElementById("chat-back-btn")!;
+
+function isMobile(): boolean {
+    return window.innerWidth <= 640;
+}
+
+function openMobileChat() {
+    messengerEl.classList.add("mobile-chat-open");
+}
+
+function closeMobileChat() {
+    messengerEl.classList.remove("mobile-chat-open");
+}
 
 function esc(t: string) {
     return t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -128,8 +142,12 @@ async function openConversation(partnerId: number, partnerName: string, partnerA
     messagesLoading = false;
     chatMessagesEl.innerHTML = "";
 
-    chatPaneEl.classList.remove("hidden");
-    chatEmptyEl.classList.add("hidden");
+    if (isMobile()) {
+        openMobileChat();
+    } else {
+        chatPaneEl.classList.remove("hidden");
+        chatEmptyEl.classList.add("hidden");
+    }
     chatPartnerEl.textContent = partnerName;
     applyBg(chatPartnerAvatar as HTMLElement, partnerAvatar);
 
@@ -316,6 +334,20 @@ export async function initMessenger() {
 
     chatMessagesEl.addEventListener("scroll", () => {
         if (chatMessagesEl.scrollTop < 60) loadOlderMessages();
+    });
+
+    chatBackBtn.addEventListener("click", () => {
+        closeMobileChat();
+    });
+
+    window.addEventListener("resize", () => {
+        if (!isMobile()) {
+            messengerEl.classList.remove("mobile-chat-open");
+            if (currentPartnerId !== null) {
+                chatPaneEl.classList.remove("hidden");
+                chatEmptyEl.classList.add("hidden");
+            }
+        }
     });
 
     chatSendBtn.addEventListener("click", sendMessage);

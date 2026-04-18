@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Sabakium</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 36 36' fill='none'><path d='M18 3L32 10V26L18 33L4 26V10L18 3Z' fill='%233B82F6' fill-opacity='0.15'/><path d='M18 3L32 10V26L18 33L4 26V10L18 3Z' stroke='%233B82F6' stroke-width='1.5'/><circle cx='18' cy='18' r='5' fill='%233B82F6'/><line x1='18' y1='8' x2='18' y2='13' stroke='%233B82F6' stroke-width='1.5'/><line x1='18' y1='23' x2='18' y2='28' stroke='%233B82F6' stroke-width='1.5'/><line x1='9' y1='13' x2='14' y2='15.5' stroke='%233B82F6' stroke-width='1.5'/><line x1='22' y1='20.5' x2='27' y2='23' stroke='%233B82F6' stroke-width='1.5'/><line x1='27' y1='13' x2='22' y2='15.5' stroke='%233B82F6' stroke-width='1.5'/><line x1='14' y1='20.5' x2='9' y2='23' stroke='%233B82F6' stroke-width='1.5'/></svg>">
 </head>
 <body>
 
@@ -46,14 +45,16 @@
 </div>
 
 <div id="app-shell" class="app-shell hidden">
+
     <nav class="sidebar">
         <div class="sidebar-logo">
-            <svg width="28" height="28" viewBox="0 0 36 36" fill="none">
+            <svg width="26" height="26" viewBox="0 0 36 36" fill="none">
                 <path d="M18 3L32 10V26L18 33L4 26V10L18 3Z" fill="#3b82f6" opacity="0.15"/>
                 <path d="M18 3L32 10V26L18 33L4 26V10L18 3Z" stroke="#3b82f6" stroke-width="1.5"/>
                 <circle cx="18" cy="18" r="5" fill="#3b82f6"/>
             </svg>
         </div>
+
         <div class="nav-items">
             <button class="nav-item active" data-tab="feed" title="Лента">
                 <i class="fa-solid fa-house"></i>
@@ -64,13 +65,18 @@
                 <span>Мессенджер</span>
             </button>
         </div>
+
+        <div class="sidebar-profile" id="sidebar-profile-btn" title="Настройки профиля">
+            <div class="avatar my-avatar sidebar-avatar" id="sidebar-avatar"></div>
+            <span class="sidebar-user-name" id="sidebar-user-name"></span>
+        </div>
     </nav>
 
     <div id="tab-feed" class="tab-content">
         <div class="feed-wrapper">
             <div class="create-post" id="create-post">
                 <div class="create-header">
-                    <div class="avatar"></div>
+                    <div class="avatar my-avatar create-post-avatar" id="create-post-avatar"></div>
                     <input type="text" id="post-input" placeholder="Что нового?"/>
                 </div>
                 <div class="create-actions">
@@ -95,7 +101,8 @@
             </div>
             <div class="chat-pane hidden" id="chat-pane">
                 <div class="chat-header">
-                    <div class="conv-avatar"></div>
+                    <button class="chat-back-btn" id="chat-back-btn"><i class="fa-solid fa-chevron-left"></i></button>
+                    <div class="conv-avatar" id="chat-partner-avatar"></div>
                     <span id="chat-partner-name" class="chat-partner-name">—</span>
                     <div class="chat-enc-badge" title="AES-GCM шифрование end-to-end">
                         <i class="fa-solid fa-lock"></i> E2E
@@ -103,6 +110,7 @@
                 </div>
                 <div class="chat-messages" id="chat-messages"></div>
                 <div class="chat-input-bar">
+                    <div class="avatar my-avatar chat-input-avatar" id="chat-input-avatar"></div>
                     <input type="text" id="chat-input" placeholder="Сообщение…"/>
                     <button class="btn submit" id="chat-send"><i class="fa-solid fa-paper-plane"></i></button>
                 </div>
@@ -123,6 +131,38 @@
         </div>
         <input type="text" id="new-chat-search" class="modal-search" placeholder="Поиск пользователя…"/>
         <div class="new-chat-results" id="new-chat-results"></div>
+    </div>
+</div>
+
+<div class="modal-overlay hidden" id="profile-modal">
+    <div class="modal-card profile-card">
+        <div class="modal-header">
+            <span>Настройки профиля</span>
+            <button class="btn icon" id="profile-close"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="profile-body">
+            <div class="profile-avatar-section">
+                <div class="profile-avatar-wrap">
+                    <img id="profile-avatar-preview" class="profile-avatar-img hidden" src="" alt="avatar"/>
+                    <div class="profile-avatar-placeholder"><i class="fa-solid fa-user"></i></div>
+                    <div class="profile-avatar-overlay" id="profile-avatar-change">
+                        <i class="fa-solid fa-camera"></i>
+                    </div>
+                </div>
+                <input type="file" id="profile-avatar-input" accept="image/jpeg,image/png,image/webp,image/gif" class="hidden"/>
+                <button class="profile-change-photo-btn" id="profile-avatar-change">Сменить фото</button>
+            </div>
+
+            <div class="field">
+                <label>Отображаемое имя</label>
+                <input type="text" id="profile-displayname" placeholder="Ваше имя" maxlength="50"/>
+            </div>
+
+            <div id="profile-error" class="auth-error"></div>
+            <div id="profile-success" class="profile-success"></div>
+
+            <button id="profile-save" class="auth-submit">Сохранить</button>
+        </div>
     </div>
 </div>
 

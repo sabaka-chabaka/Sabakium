@@ -10,18 +10,18 @@ import {
 } from "./api";
 import { connectFeed, onFeedEvent } from "./feedhub";
 import { initMessenger } from "./messenger";
+import { applyAvatar, openProfileModal } from "./profile";
 
 let oldestPostId: number | undefined;
 let isLoading = false;
 let hasMore = true;
 const PAGE_SIZE = 20;
 
-const authScreen   = document.getElementById("auth-screen")!;
-const appShell     = document.getElementById("app-shell")!;
-const feedEl       = document.getElementById("feed")!;
-const postInput    = document.getElementById("post-input") as HTMLInputElement;
-const postSubmit   = document.getElementById("post-submit")!;
-
+const authScreen = document.getElementById("auth-screen")!;
+const appShell   = document.getElementById("app-shell")!;
+const feedEl     = document.getElementById("feed")!;
+const postInput  = document.getElementById("post-input") as HTMLInputElement;
+const postSubmit = document.getElementById("post-submit")!;
 const loginBtn   = document.getElementById("login-btn")!;
 const regBtn     = document.getElementById("reg-btn")!;
 const loginError = document.getElementById("login-error")!;
@@ -65,9 +65,9 @@ function switchTab(name: string) {
     Object.entries(tabEls).forEach(([k, el]) => el.classList.toggle("hidden", k !== name));
 }
 
-navItems.forEach(item => {
-    item.addEventListener("click", () => switchTab(item.dataset["tab"]!));
-});
+navItems.forEach(item => item.addEventListener("click", () => switchTab(item.dataset["tab"]!)));
+
+document.getElementById("sidebar-profile-btn")!.addEventListener("click", openProfileModal);
 
 postSubmit.addEventListener("click", async () => {
     const content = postInput.value.trim();
@@ -77,6 +77,15 @@ postSubmit.addEventListener("click", async () => {
     catch (e: unknown) { alert((e as Error).message); }
     finally { postSubmit.removeAttribute("disabled"); }
 });
+
+function esc(t: string) { return t.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+
+function makeAvatarHtml(url: string | null | undefined, cls = ""): string {
+    if (url) {
+        return `<div class="avatar ${cls}" style="background-image:url('${url}');background-size:cover;background-position:center;"></div>`;
+    }
+    return `<div class="avatar ${cls}"></div>`;
+}
 
 function renderPost(post: PostDto, prepend = false): HTMLElement {
     const session = loadSession();
@@ -89,7 +98,7 @@ function renderPost(post: PostDto, prepend = false): HTMLElement {
     });
     el.innerHTML = `
     <div class="post-header">
-      <div class="avatar"></div>
+      ${makeAvatarHtml((post as any).avatarUrl, isOwn ? "my-avatar" : "")}
       <div class="post-meta">
         <span class="post-author">${esc(post.displayName)}</span>
         <span class="post-username">@${esc(post.username)}</span>
@@ -98,6 +107,12 @@ function renderPost(post: PostDto, prepend = false): HTMLElement {
       ${isOwn ? `<button class="btn icon post-delete" data-id="${post.id}" title="Удалить">✕</button>` : ""}
     </div>
     <div class="post-content">${esc(post.content)}</div>`;
+
+    if (isOwn) {
+        const avatarEl = el.querySelector<HTMLElement>(".my-avatar");
+        if (avatarEl) applyAvatar(avatarEl, session?.avatarUrl ?? null);
+    }
+
     el.querySelector(".post-delete")?.addEventListener("click", async () => {
         if (!confirm("Удалить пост?")) return;
         await apiDeletePost(post.id);
@@ -106,8 +121,6 @@ function renderPost(post: PostDto, prepend = false): HTMLElement {
     else feedEl.append(el);
     return el;
 }
-
-function esc(t: string) { return t.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
 
 async function loadMore() {
     if (isLoading || !hasMore) return;
@@ -131,12 +144,23 @@ function wireSignalR() {
 async function boot() {
     authScreen.classList.add("hidden");
     appShell.classList.remove("hidden");
+
+    const session = loadSession()!;
+
+    const sidebarName = document.getElementById("sidebar-user-name")!;
+    sidebarName.textContent = session.displayName;
+
+    const myAvatarUrl = session.avatarUrl ?? null;
+    document.querySelectorAll<HTMLElement>(".my-avatar").forEach(el => applyAvatar(el, myAvatarUrl));
+
     feedEl.innerHTML = "";
     oldestPostId = undefined;
     hasMore = true;
+
     await connectFeed();
     wireSignalR();
     await loadMore();
+
     switchTab("feed");
     await initMessenger();
 }
