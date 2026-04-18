@@ -45,10 +45,8 @@
     </div>
 </div>
 
-<!-- APP SHELL -->
 <div id="app-shell" class="app-shell hidden">
 
-    <!-- Sidebar -->
     <nav class="sidebar">
         <div class="sidebar-logo">
             <svg width="26" height="26" viewBox="0 0 36 36" fill="none">
@@ -76,16 +74,19 @@
         </div>
     </nav>
 
-    <!-- Feed tab -->
     <div id="tab-feed" class="tab-content">
         <div class="feed-wrapper">
             <div class="create-post" id="create-post">
                 <div class="create-header">
                     <div class="avatar my-avatar create-post-avatar" id="create-post-avatar"></div>
-                    <input type="text" id="post-input" placeholder="Что нового?"/>
+                    <textarea id="post-input" placeholder="Что нового?" rows="2"></textarea>
                 </div>
+                <div id="image-preview" class="image-preview-area"></div>
                 <div class="create-actions">
-                    <button class="btn icon"><i class="fa-regular fa-image"></i></button>
+                    <button class="btn icon attach-btn" id="attach-image-btn" title="Прикрепить изображение">
+                        <i class="fa-regular fa-image"></i>
+                    </button>
+                    <input type="file" id="image-file-input" accept="image/jpeg,image/png,image/gif,image/webp" class="hidden"/>
                     <button class="btn submit" id="post-submit">Опубликовать</button>
                 </div>
             </div>
@@ -93,7 +94,6 @@
         </div>
     </div>
 
-    <!-- Messenger tab -->
     <div id="tab-messenger" class="tab-content hidden">
         <div class="messenger" id="messenger">
             <div class="conv-sidebar">
@@ -129,7 +129,6 @@
     </div>
 </div>
 
-<!-- New chat modal -->
 <div class="modal-overlay hidden" id="new-chat-modal">
     <div class="modal-card">
         <div class="modal-header">
@@ -141,7 +140,6 @@
     </div>
 </div>
 
-<!-- Profile settings modal -->
 <div class="modal-overlay hidden" id="profile-modal">
     <div class="modal-card profile-card">
         <div class="modal-header">
@@ -149,7 +147,6 @@
             <button class="btn icon" id="profile-close"><i class="fa-solid fa-xmark"></i></button>
         </div>
         <div class="profile-body">
-            <!-- Avatar section -->
             <div class="profile-avatar-section">
                 <div class="profile-avatar-wrap">
                     <img id="profile-avatar-preview" class="profile-avatar-img hidden" src="" alt="avatar"/>
@@ -162,7 +159,6 @@
                 <button class="profile-change-photo-btn" id="profile-avatar-change">Сменить фото</button>
             </div>
 
-            <!-- Display name -->
             <div class="field">
                 <label>Отображаемое имя</label>
                 <input type="text" id="profile-displayname" placeholder="Ваше имя" maxlength="50"/>
@@ -175,7 +171,6 @@
         </div>
     </div>
 </div>
-
 
 <div class="modal-overlay hidden" id="crop-modal">
     <div class="modal-card crop-card">
