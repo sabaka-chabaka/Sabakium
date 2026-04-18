@@ -13,14 +13,11 @@ body {
 
 .hidden { display: none !important; }
 
-
-
 .app-shell {
     display: flex;
     height: 100vh;
     width: 100vw;
 }
-
 
 .sidebar {
     width: 72px;
@@ -70,7 +67,6 @@ body {
 .nav-item:hover  { background: rgba(255,255,255,0.05); color: #ccc; }
 .nav-item.active { background: rgba(59,130,246,0.12); color: #3b82f6; }
 
-
 .nav-badge {
     position: absolute;
     top: 6px;
@@ -89,11 +85,11 @@ body {
     pointer-events: none;
     animation: badge-pop 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
+
 @keyframes badge-pop {
     from { transform: scale(0); opacity: 0; }
     to   { transform: scale(1); opacity: 1; }
 }
-
 
 .sidebar-profile {
     display: flex;
@@ -125,16 +121,12 @@ body {
     max-width: 56px;
 }
 
-
 .tab-content {
     flex: 1;
     overflow-y: auto;
     height: 100vh;
 }
-.tab-content#tab-messenger {
-    overflow: hidden;
-}
-
+.tab-content#tab-messenger { overflow: hidden; }
 
 .avatar, .conv-avatar, .msg-avatar {
     border-radius: 50%;
@@ -145,8 +137,6 @@ body {
 .conv-avatar { width: 40px; height: 40px; }
 .conv-avatar.small { width: 32px; height: 32px; }
 .msg-avatar  { width: 30px; height: 30px; }
-
-
 
 .feed-wrapper {
     display: flex;
@@ -193,9 +183,9 @@ body {
     transition: 0.15s;
     font-family: Comfortaa, sans-serif;
 }
-.btn:hover    { background: rgba(255,255,255,0.06); }
-.btn.icon     { width: 38px; height: 38px; font-size: 15px; }
-.btn.submit   { padding: 0 16px; height: 38px; font-size: 13px; }
+.btn:hover  { background: rgba(255,255,255,0.06); }
+.btn.icon   { width: 38px; height: 38px; font-size: 15px; }
+.btn.submit { padding: 0 16px; height: 38px; font-size: 13px; }
 
 .create-post {
     width: 100%;
@@ -229,8 +219,6 @@ body {
     margin-top: 10px;
 }
 
-
-
 .messenger {
     display: grid;
     grid-template-columns: 280px 1fr;
@@ -238,7 +226,6 @@ body {
     height: 100vh;
     overflow: hidden;
 }
-
 
 .conv-sidebar {
     border-right: 1px solid rgba(255,255,255,0.06);
@@ -278,7 +265,6 @@ body {
 .conv-uname   { font-size: 12px; color: #666; }
 .conv-empty   { padding: 24px 16px; color: #555; font-size: 13px; text-align: center; }
 
-
 .chat-pane, .chat-empty {
     grid-column: 2;
     grid-row: 1;
@@ -311,7 +297,6 @@ body {
     gap: 4px;
 }
 
-
 .chat-messages {
     flex: 1;
     min-height: 0;
@@ -321,7 +306,6 @@ body {
     flex-direction: column;
     gap: 6px;
 }
-
 
 .msg {
     display: flex;
@@ -349,7 +333,6 @@ body {
 .msg-text { font-size: 14px; line-height: 1.4; word-break: break-word; }
 .msg-time { font-size: 11px; color: #555; margin-top: 4px; text-align: right; }
 
-
 .chat-input-bar {
     display: flex;
     align-items: center;
@@ -373,7 +356,6 @@ body {
 }
 .chat-input-bar input:focus { border-color: rgba(255,255,255,0.15); }
 
-
 .chat-empty {
     display: flex;
     flex-direction: column;
@@ -385,8 +367,6 @@ body {
 }
 .chat-empty i { font-size: 48px; }
 .chat-empty p { font-size: 14px; margin: 0; }
-
-
 
 .modal-overlay {
     position: fixed;
@@ -434,7 +414,6 @@ body {
     transition: background 0.12s;
 }
 .user-result:hover { background: rgba(255,255,255,0.04); }
-
 
 .profile-card { width: 360px; }
 .profile-body { padding: 24px 20px; }
@@ -499,15 +478,65 @@ body {
     transition: 0.15s;
 }
 .profile-change-photo-btn:hover { background: rgba(255,255,255,0.06); color: #ccc; }
+.profile-success { font-size: 12px; color: #22c55e; min-height: 16px; margin-bottom: 6px; }
 
-.profile-success {
-    font-size: 12px;
-    color: #22c55e;
-    min-height: 16px;
-    margin-bottom: 6px;
+.crop-card {
+    width: 380px;
 }
-
-
+.crop-body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+    gap: 10px;
+}
+#crop-canvas {
+    border-radius: 12px;
+    cursor: grab;
+    touch-action: none;
+    display: block;
+    width: 320px;
+    height: 320px;
+}
+#crop-canvas:active { cursor: grabbing; }
+.crop-hint {
+    font-size: 12px;
+    color: #555;
+    margin: 0;
+}
+.crop-actions {
+    display: flex;
+    gap: 10px;
+    padding: 0 20px 20px;
+    justify-content: space-between;
+}
+.crop-rotate-btn {
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 10px;
+    color: #9a9a9a;
+    font-size: 13px;
+    padding: 8px 16px;
+    cursor: pointer;
+    font-family: Comfortaa, sans-serif;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: 0.15s;
+}
+.crop-rotate-btn:hover { background: rgba(255,255,255,0.06); color: #ccc; }
+.crop-confirm-btn {
+    background: rgba(59,130,246,0.15);
+    border: 1px solid rgba(59,130,246,0.3);
+    border-radius: 10px;
+    color: #60a5fa;
+    font-size: 13px;
+    padding: 8px 24px;
+    cursor: pointer;
+    font-family: Comfortaa, sans-serif;
+    transition: 0.15s;
+}
+.crop-confirm-btn:hover { background: rgba(59,130,246,0.25); }
 
 .auth-screen {
     position: fixed;
@@ -550,8 +579,8 @@ body {
     font-family: Comfortaa, sans-serif;
 }
 .auth-tab.active { background: rgba(255,255,255,0.06); color: #fff; }
-.auth-form          { display: none; }
-.auth-form.active   { display: block; }
+.auth-form        { display: none; }
+.auth-form.active { display: block; }
 .field { display: flex; flex-direction: column; margin-bottom: 12px; }
 .field label { font-size: 12px; color: #9a9a9a; margin-bottom: 4px; }
 .field input {
@@ -578,165 +607,9 @@ body {
     font-family: Comfortaa, sans-serif;
     transition: 0.15s;
 }
-.auth-submit:hover { background: #333; }
-.auth-submit:disabled { opacity: 0.5; cursor: not-allowed; }
-.auth-error {
-    font-size: 12px;
-    color: #ff6b6b;
-    min-height: 16px;
-    margin-bottom: 6px;
-}
-
-
-::-webkit-scrollbar { width: 4px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
-
-
-@media (max-width: 640px) {
-
-    
-    .app-shell {
-        flex-direction: column;
-        height: 100dvh;
-    }
-
-    
-    .sidebar {
-        order: 2;
-        width: 100%;
-        min-width: unset;
-        height: 58px;
-        flex-direction: row;
-        align-items: center;
-        justify-content: space-around;
-        padding: 0 8px;
-        border-right: none;
-        border-top: 1px solid rgba(255,255,255,0.06);
-        gap: 0;
-    }
-
-    .sidebar-logo { display: none; }
-
-    .nav-items {
-        flex-direction: row;
-        flex: 1;
-        padding: 0;
-        gap: 0;
-        justify-content: space-around;
-    }
-
-    .nav-item {
-        flex: 1;
-        border-radius: 8px;
-        padding: 6px 0;
-        gap: 2px;
-    }
-    .nav-item i    { font-size: 20px; }
-    .nav-item span { font-size: 9px; }
-
-    .sidebar-profile {
-        width: 52px;
-        border-radius: 8px;
-        padding: 6px 0;
-        gap: 2px;
-    }
-    .sidebar-user-name { display: none; }
-    .sidebar-avatar {
-        width: 28px !important;
-        height: 28px !important;
-        min-width: 28px !important;
-        border-width: 1.5px;
-    }
-
-    
-    .tab-content {
-        order: 1;
-        flex: 1;
-        height: calc(100dvh - 58px);
-        overflow-y: auto;
-    }
-    .tab-content#tab-messenger {
-        overflow: hidden;
-        height: calc(100dvh - 58px);
-    }
-
-    
-    .feed-wrapper { padding: 12px; }
-    .create-post  { max-width: 100%; }
-    .feed         { max-width: 100%; }
-    .post         { border-radius: 10px; padding: 12px; }
-
-    
-    .messenger {
-        display: block;
-        position: relative;
-        width: 100%;
-        height: 100%;
-        overflow: hidden;
-    }
-
-    
-    .conv-sidebar {
-        position: absolute;
-        inset: 0;
-        width: 100%;
-        transition: transform 0.28s cubic-bezier(0.4,0,0.2,1);
-        z-index: 1;
-    }
-
-    
-    .chat-pane {
-        position: absolute;
-        inset: 0;
-        width: 100%;
-        height: 100%;
-        transform: translateX(100%);
-        transition: transform 0.28s cubic-bezier(0.4,0,0.2,1);
-        z-index: 2;
-        background: #121212;
-    }
-
-    
-    .messenger.mobile-chat-open .conv-sidebar {
-        transform: translateX(-100%);
-    }
-    .messenger.mobile-chat-open .chat-pane {
-        transform: translateX(0);
-        display: flex; 
-    }
-
-    
-    .chat-empty { display: none; }
-
-    
-    .chat-back-btn {
-        display: flex !important;
-    }
-
-    
-    .chat-header { padding: 12px 14px; gap: 10px; }
-    .chat-partner-name { font-size: 14px; }
-
-    
-    .chat-messages { padding: 12px 14px; }
-    .msg { max-width: 85%; }
-
-    
-    .chat-input-bar { padding: 10px 12px; }
-    .chat-input-avatar { display: none; }
-
-    
-    .modal-card, .profile-card {
-        width: calc(100vw - 32px);
-        max-width: 400px;
-        margin: 16px;
-    }
-
-    
-    .auth-card { width: calc(100vw - 32px); }
-}
-
+.auth-submit:hover     { background: #333; }
+.auth-submit:disabled  { opacity: 0.5; cursor: not-allowed; }
+.auth-error { font-size: 12px; color: #ff6b6b; min-height: 16px; margin-bottom: 6px; }
 
 .chat-back-btn {
     display: none;
@@ -751,3 +624,116 @@ body {
     transition: color 0.15s;
 }
 .chat-back-btn:hover { color: #e6e6e6; }
+
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
+
+@media (max-width: 640px) {
+    .app-shell {
+        flex-direction: column;
+        height: 100dvh;
+    }
+    .sidebar {
+        order: 2;
+        width: 100%;
+        min-width: unset;
+        height: 58px;
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-around;
+        padding: 0 8px;
+        border-right: none;
+        border-top: 1px solid rgba(255,255,255,0.06);
+        gap: 0;
+    }
+    .sidebar-logo { display: none; }
+    .nav-items {
+        flex-direction: row;
+        flex: 1;
+        padding: 0;
+        gap: 0;
+        justify-content: space-around;
+    }
+    .nav-item {
+        flex: 1;
+        border-radius: 8px;
+        padding: 6px 0;
+        gap: 2px;
+    }
+    .nav-item i    { font-size: 20px; }
+    .nav-item span { font-size: 9px; }
+    .sidebar-profile {
+        width: 52px;
+        border-radius: 8px;
+        padding: 6px 0;
+        gap: 2px;
+    }
+    .sidebar-user-name { display: none; }
+    .sidebar-avatar {
+        width: 28px !important;
+        height: 28px !important;
+        min-width: 28px !important;
+        border-width: 1.5px;
+    }
+    .tab-content {
+        order: 1;
+        flex: 1;
+        height: calc(100dvh - 58px);
+        overflow-y: auto;
+    }
+    .tab-content#tab-messenger {
+        overflow: hidden;
+        height: calc(100dvh - 58px);
+    }
+    .feed-wrapper { padding: 12px; }
+    .create-post  { max-width: 100%; }
+    .feed         { max-width: 100%; }
+    .post         { border-radius: 10px; padding: 12px; }
+    .messenger {
+        display: block;
+        position: relative;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+    }
+    .conv-sidebar {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        transition: transform 0.28s cubic-bezier(0.4,0,0.2,1);
+        z-index: 1;
+    }
+    .chat-pane {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        transform: translateX(100%);
+        transition: transform 0.28s cubic-bezier(0.4,0,0.2,1);
+        z-index: 2;
+        background: #121212;
+    }
+    .messenger.mobile-chat-open .conv-sidebar {
+        transform: translateX(-100%);
+    }
+    .messenger.mobile-chat-open .chat-pane {
+        transform: translateX(0);
+        display: flex;
+    }
+    .chat-empty { display: none; }
+    .chat-back-btn { display: flex !important; }
+    .chat-header { padding: 12px 14px; gap: 10px; }
+    .chat-partner-name { font-size: 14px; }
+    .chat-messages { padding: 12px 14px; }
+    .msg { max-width: 85%; }
+    .chat-input-bar { padding: 10px 12px; }
+    .chat-input-avatar { display: none; }
+    .modal-card, .profile-card, .crop-card {
+        width: calc(100vw - 32px);
+        max-width: 400px;
+        margin: 16px;
+    }
+    #crop-canvas { width: min(280px, calc(100vw - 80px)); height: min(280px, calc(100vw - 80px)); }
+    .auth-card { width: calc(100vw - 32px); }
+}
