@@ -2,11 +2,18 @@ import {
     apiGetConversations,
     apiGetHistory,
     apiSearchUsers,
+    apiCheckOnline,
+    apiUploadChatFile,
     connectChat,
     decryptMessage,
+    decodeFileMessage,
+    encodeFileMessage,
     initCryptoKey,
     onChatMessage,
+    onPresenceChange,
+    onTypingChange,
     sendEncryptedMessage,
+    sendTyping,
     type ConversationDto,
     type EncryptedMessageDto,
 } from "./chathub";
@@ -19,6 +26,8 @@ let messagesOldestId: number | undefined;
 let messagesHasMore = true;
 let messagesLoading = false;
 let unreadCount = 0;
+let typingTimer: ReturnType<typeof setTimeout> | null = null;
+let isTypingSent = false;
 
 const convListEl        = document.getElementById("conv-list")!;
 const chatPaneEl        = document.getElementById("chat-pane")!;
@@ -28,6 +37,8 @@ const chatInputEl       = document.getElementById("chat-input") as HTMLInputElem
 const chatSendBtn       = document.getElementById("chat-send")!;
 const chatPartnerEl     = document.getElementById("chat-partner-name")!;
 const chatPartnerAvatar = document.getElementById("chat-partner-avatar")!;
+const chatStatusEl      = document.getElementById("chat-partner-status")!;
+const chatTypingEl      = document.getElementById("chat-typing-indicator")!;
 const newChatBtn        = document.getElementById("new-chat-btn")!;
 const newChatModal      = document.getElementById("new-chat-modal")!;
 const newChatClose      = document.getElementById("new-chat-close")!;
@@ -36,26 +47,14 @@ const newChatResultsEl  = document.getElementById("new-chat-results")!;
 const messengerNavBtn   = document.querySelector<HTMLElement>('.nav-item[data-tab="messenger"]')!;
 const messengerEl       = document.getElementById("messenger")!;
 const chatBackBtn       = document.getElementById("chat-back-btn")!;
+const chatAttachBtn     = document.getElementById("chat-attach-btn")!;
+const chatFileInput     = document.getElementById("chat-file-input") as HTMLInputElement;
 
-function isMobile(): boolean {
-    return window.innerWidth <= 640;
-}
-
-function openMobileChat() {
-    messengerEl.classList.add("mobile-chat-open");
-}
-
-function closeMobileChat() {
-    messengerEl.classList.remove("mobile-chat-open");
-}
-
-function esc(t: string) {
-    return t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-}
-
-function myId(): number | undefined {
-    return loadSession()?.userId;
-}
+function isMobile(): boolean { return window.innerWidth <= 640; }
+function openMobileChat()  { messengerEl.classList.add("mobile-chat-open"); }
+function closeMobileChat() { messengerEl.classList.remove("mobile-chat-open"); }
+function esc(t: string)    { return t.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+function myId(): number | undefined { return loadSession()?.userId; }
 
 function applyBg(el: HTMLElement, url: string | null | undefined) {
     if (url) {
@@ -100,6 +99,113 @@ function renderBadge() {
 
 messengerNavBtn.addEventListener("click", clearUnread, { capture: true });
 
+function setPartnerStatus(online: boolean) {
+    chatStatusEl.textContent = online ? "в сети" : "не в сети";
+    chatStatusEl.className = "chat-partner-status " + (online ? "status-online" : "status-offline");
+}
+
+async function refreshPartnerStatus() {
+    if (currentPartnerId === null) return;
+    try {
+        const { online } = await apiCheckOnline(currentPartnerId);
+        setPartnerStatus(online);
+    } catch {}
+}
+
+onPresenceChange((userId, online) => {
+    if (userId === currentPartnerId) setPartnerStatus(online);
+    const item = convListEl.querySelector<HTMLElement>(`.conv-item[data-pid="${userId}"]`);
+    if (item) {
+        item.querySelector(".presence-dot")?.remove();
+        if (online) {
+            const dot = document.createElement("span");
+            dot.className = "presence-dot";
+            item.querySelector(".conv-avatar")?.appendChild(dot);
+        }
+    }
+});
+
+onTypingChange((userId, isTyping) => {
+    if (userId !== currentPartnerId) return;
+    chatTypingEl.classList.toggle("hidden", !isTyping);
+});
+
+function handleTypingInput() {
+    if (!currentPartnerId) return;
+    if (!isTypingSent) {
+        sendTyping(currentPartnerId, true);
+        isTypingSent = true;
+    }
+    if (typingTimer) clearTimeout(typingTimer);
+    typingTimer = setTimeout(() => {
+        if (currentPartnerId) sendTyping(currentPartnerId, false);
+        isTypingSent = false;
+    }, 2000);
+}
+
+function formatFileSize(bytes: number): string {
+    if (bytes < 1024) return `${bytes} Б`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} КБ`;
+    return `${(bytes / 1024 / 1024).toFixed(1)} МБ`;
+}
+
+function fileIcon(mimeType: string): string {
+    if (mimeType.startsWith("image/")) return "🖼️";
+    if (mimeType.startsWith("video/")) return "🎬";
+    if (mimeType.startsWith("audio/")) return "🎵";
+    if (mimeType.includes("pdf"))      return "📄";
+    if (mimeType.includes("zip") || mimeType.includes("rar") || mimeType.includes("7z")) return "🗜️";
+    if (mimeType.includes("word") || mimeType.includes("document")) return "📝";
+    return "📎";
+}
+
+function buildFileContent(meta: { url: string; fileName: string; fileSize: number; mimeType: string }): HTMLElement {
+    const wrap = document.createElement("div");
+    wrap.className = "msg-file";
+
+    if (meta.mimeType.startsWith("audio/")) {
+        wrap.innerHTML = `
+            <div class="msg-file-name"><span class="msg-file-icon">🎵</span>${esc(meta.fileName)}</div>
+            <audio class="msg-audio-player" controls preload="metadata">
+                <source src="${meta.url}" type="${esc(meta.mimeType)}"/>
+            </audio>
+            <div class="msg-file-size">${formatFileSize(meta.fileSize)}</div>`;
+        return wrap;
+    }
+
+    if (meta.mimeType.startsWith("video/")) {
+        wrap.innerHTML = `
+            <div class="msg-file-name"><span class="msg-file-icon">🎬</span>${esc(meta.fileName)}</div>
+            <video class="msg-video-player" controls preload="metadata">
+                <source src="${meta.url}" type="${esc(meta.mimeType)}"/>
+            </video>
+            <div class="msg-file-size">${formatFileSize(meta.fileSize)}</div>`;
+        return wrap;
+    }
+
+    if (meta.mimeType.startsWith("image/")) {
+        wrap.innerHTML = `
+            <img class="msg-image-preview" src="${meta.url}" alt="${esc(meta.fileName)}" loading="lazy"/>
+            <div class="msg-file-bottom">
+                <span class="msg-file-icon">🖼️</span>
+                <span class="msg-file-name-small">${esc(meta.fileName)}</span>
+                <a class="msg-file-download" href="${meta.url}" download="${esc(meta.fileName)}" target="_blank">↓</a>
+            </div>`;
+        return wrap;
+    }
+
+    wrap.innerHTML = `
+        <div class="msg-file-generic">
+            <span class="msg-file-icon-big">${fileIcon(meta.mimeType)}</span>
+            <div class="msg-file-info">
+                <span class="msg-file-name">${esc(meta.fileName)}</span>
+                <span class="msg-file-size">${formatFileSize(meta.fileSize)}</span>
+            </div>
+            <a class="msg-file-download" href="${meta.url}" download="${esc(meta.fileName)}" target="_blank" title="Скачать">↓</a>
+        </div>`;
+    return wrap;
+}
+
 async function refreshConversations() {
     let convs: ConversationDto[] = [];
     try { convs = await apiGetConversations(); } catch { return; }
@@ -111,7 +217,11 @@ async function refreshConversations() {
     }
     for (const c of convs) {
         let preview = "…";
-        try { preview = await decryptMessage(c.latestCiphertext, c.latestIv, c.latestAuthTag); } catch {}
+        try {
+            const plain = await decryptMessage(c.latestCiphertext, c.latestIv, c.latestAuthTag);
+            const fileMeta = decodeFileMessage(plain);
+            preview = fileMeta ? `📎 ${fileMeta.fileName}` : plain;
+        } catch {}
         const isMine = c.latestSenderId === myId();
         const el = document.createElement("div");
         el.className = "conv-item" + (c.partnerId === currentPartnerId ? " active" : "");
@@ -141,15 +251,15 @@ async function openConversation(partnerId: number, partnerName: string, partnerA
     messagesHasMore = true;
     messagesLoading = false;
     chatMessagesEl.innerHTML = "";
+    chatTypingEl.classList.add("hidden");
 
-    if (isMobile()) {
-        openMobileChat();
-    } else {
-        chatPaneEl.classList.remove("hidden");
-        chatEmptyEl.classList.add("hidden");
-    }
+    if (isMobile()) openMobileChat();
+    else { chatPaneEl.classList.remove("hidden"); chatEmptyEl.classList.add("hidden"); }
+
     chatPartnerEl.textContent = partnerName;
     applyBg(chatPartnerAvatar as HTMLElement, partnerAvatar);
+    chatStatusEl.textContent = "…";
+    chatStatusEl.className = "chat-partner-status";
 
     document.querySelectorAll(".conv-item").forEach(el =>
         el.classList.toggle("active", el.getAttribute("data-pid") === String(partnerId))
@@ -158,6 +268,7 @@ async function openConversation(partnerId: number, partnerName: string, partnerA
     await loadOlderMessages();
     chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
     chatInputEl.focus();
+    await refreshPartnerStatus();
 }
 
 async function loadOlderMessages() {
@@ -168,12 +279,8 @@ async function loadOlderMessages() {
     const prevScrollHeight = chatMessagesEl.scrollHeight;
 
     let msgs: EncryptedMessageDto[] = [];
-    try {
-        msgs = await apiGetHistory(currentPartnerId, messagesOldestId, 50);
-        console.log(`[Chat] history for ${currentPartnerId}:`, msgs);
-    } catch (e) {
-        console.error("[Chat] apiGetHistory failed:", e);
-    }
+    try { msgs = await apiGetHistory(currentPartnerId, messagesOldestId, 50); }
+    catch (e) { console.error("[Chat] apiGetHistory failed:", e); }
 
     if (currentPartnerId !== savedPartner) { messagesLoading = false; return; }
 
@@ -185,9 +292,7 @@ async function loadOlderMessages() {
         const frag = document.createDocumentFragment();
         els.forEach(el => frag.appendChild(el));
         chatMessagesEl.insertBefore(frag, chatMessagesEl.firstChild);
-        if (prevScrollHeight > 0) {
-            chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight - prevScrollHeight;
-        }
+        if (prevScrollHeight > 0) chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight - prevScrollHeight;
     }
 
     messagesLoading = false;
@@ -195,39 +300,20 @@ async function loadOlderMessages() {
 
 function renderMessageText(text: string): DocumentFragment {
     const fragment = document.createDocumentFragment();
-
     const urlRegex = /(https?:\/\/[^\s]+)/g;
-
     let lastIndex = 0;
     let match: RegExpExecArray | null;
-
     while ((match = urlRegex.exec(text)) !== null) {
-        const url = match[0];
-        const index = match.index;
-
-        if (index > lastIndex) {
-            fragment.appendChild(
-                document.createTextNode(text.slice(lastIndex, index))
-            );
-        }
-
+        if (match.index > lastIndex)
+            fragment.appendChild(document.createTextNode(text.slice(lastIndex, match.index)));
         const a = document.createElement("a");
-        a.href = url;
-        a.textContent = url;
-        a.target = "_blank";
-        a.rel = "noopener noreferrer";
-
+        a.href = match[0]; a.textContent = match[0];
+        a.target = "_blank"; a.rel = "noopener noreferrer";
         fragment.appendChild(a);
-
-        lastIndex = index + url.length;
+        lastIndex = match.index + match[0].length;
     }
-
-    if (lastIndex < text.length) {
-        fragment.appendChild(
-            document.createTextNode(text.slice(lastIndex))
-        );
-    }
-
+    if (lastIndex < text.length)
+        fragment.appendChild(document.createTextNode(text.slice(lastIndex)));
     return fragment;
 }
 
@@ -255,24 +341,23 @@ async function buildMessageEl(msg: EncryptedMessageDto): Promise<HTMLElement> {
     const bubbleEl = document.createElement("div");
     bubbleEl.className = "msg-bubble";
 
-    const textEl = document.createElement("div");
-    textEl.className = "msg-text";
-    textEl.appendChild(renderMessageText(text));
+    const fileMeta = decodeFileMessage(text);
+    if (fileMeta) {
+        bubbleEl.appendChild(buildFileContent(fileMeta));
+    } else {
+        const textEl = document.createElement("div");
+        textEl.className = "msg-text";
+        textEl.appendChild(renderMessageText(text));
+        bubbleEl.appendChild(textEl);
+    }
 
     const timeEl = document.createElement("div");
     timeEl.className = "msg-time";
     timeEl.textContent = time;
-
-    bubbleEl.appendChild(textEl);
     bubbleEl.appendChild(timeEl);
 
-    if (isOwn) {
-        el.appendChild(bubbleEl);
-        el.appendChild(avatarEl);
-    } else {
-        el.appendChild(avatarEl);
-        el.appendChild(bubbleEl);
-    }
+    if (isOwn) { el.appendChild(bubbleEl); el.appendChild(avatarEl); }
+    else       { el.appendChild(avatarEl); el.appendChild(bubbleEl); }
 
     return el;
 }
@@ -280,7 +365,6 @@ async function buildMessageEl(msg: EncryptedMessageDto): Promise<HTMLElement> {
 async function handleIncoming(msg: EncryptedMessageDto) {
     const me = myId();
     const openConvId = currentPartnerId;
-
     const belongsToOpenConv = openConvId !== null && (
         (msg.senderId === me         && msg.recipientId === openConvId) ||
         (msg.senderId === openConvId && msg.recipientId === me)
@@ -304,14 +388,35 @@ async function sendMessage() {
     if (!text) return;
     chatSendBtn.setAttribute("disabled", "true");
     chatInputEl.value = "";
+    if (typingTimer) { clearTimeout(typingTimer); typingTimer = null; }
+    if (isTypingSent) { sendTyping(currentPartnerId, false); isTypingSent = false; }
+    try { await sendEncryptedMessage(currentPartnerId, text); }
+    catch (e) { chatInputEl.value = text; alert((e as Error).message); }
+    finally { chatSendBtn.removeAttribute("disabled"); chatInputEl.focus(); }
+}
+
+async function sendFile(file: File) {
+    if (!currentPartnerId) return;
+    const MAX = 50 * 1024 * 1024;
+    if (file.size > MAX) { alert("Файл слишком большой (макс. 50 МБ)"); return; }
+
+    const progressEl = document.createElement("div");
+    progressEl.className = "msg msg-own";
+    progressEl.innerHTML = `<div class="msg-bubble"><div class="msg-upload-progress">
+        <span class="msg-file-icon">📎</span>
+        <span>Загрузка ${esc(file.name)}…</span>
+    </div></div>`;
+    chatMessagesEl.appendChild(progressEl);
+    chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
+
     try {
-        await sendEncryptedMessage(currentPartnerId, text);
+        const meta = await apiUploadChatFile(file);
+        progressEl.remove();
+        const payload = encodeFileMessage(meta);
+        await sendEncryptedMessage(currentPartnerId, payload);
     } catch (e) {
-        chatInputEl.value = text;
+        progressEl.remove();
         alert((e as Error).message);
-    } finally {
-        chatSendBtn.removeAttribute("disabled");
-        chatInputEl.focus();
     }
 }
 
@@ -325,9 +430,7 @@ function openNewChatModal() {
     searchAndRender("");
 }
 
-function closeNewChatModal() {
-    newChatModal.classList.add("hidden");
-}
+function closeNewChatModal() { newChatModal.classList.add("hidden"); }
 
 async function searchAndRender(q: string) {
     const users = await apiSearchUsers(q);
@@ -339,26 +442,19 @@ async function searchAndRender(q: string) {
     for (const u of users) {
         const el = document.createElement("div");
         el.className = "user-result";
-
         const avatarEl = document.createElement("div");
         avatarEl.className = "conv-avatar small";
         applyBg(avatarEl, u.avatarUrl);
-
-        const nameEl = document.createElement("span");
+        const nameEl  = document.createElement("span");
         nameEl.className = "conv-name";
         nameEl.textContent = u.displayName;
-
         const unameEl = document.createElement("span");
         unameEl.className = "conv-uname";
         unameEl.textContent = `@${u.username}`;
-
         el.appendChild(avatarEl);
         el.appendChild(nameEl);
         el.appendChild(unameEl);
-        el.addEventListener("click", () => {
-            closeNewChatModal();
-            openConversation(u.id, u.displayName, u.avatarUrl ?? null);
-        });
+        el.addEventListener("click", () => { closeNewChatModal(); openConversation(u.id, u.displayName, u.avatarUrl ?? null); });
         newChatResultsEl.append(el);
     }
 }
@@ -384,9 +480,7 @@ export async function initMessenger() {
         if (chatMessagesEl.scrollTop < 60) loadOlderMessages();
     });
 
-    chatBackBtn.addEventListener("click", () => {
-        closeMobileChat();
-    });
+    chatBackBtn.addEventListener("click", closeMobileChat);
 
     window.addEventListener("resize", () => {
         if (!isMobile()) {
@@ -402,6 +496,16 @@ export async function initMessenger() {
     chatInputEl.addEventListener("keydown", e => {
         if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); }
     });
+    chatInputEl.addEventListener("input", handleTypingInput);
+
+    chatAttachBtn.addEventListener("click", () => chatFileInput.click());
+    chatFileInput.addEventListener("change", () => {
+        const file = chatFileInput.files?.[0];
+        if (!file) return;
+        chatFileInput.value = "";
+        sendFile(file);
+    });
+
     newChatBtn.addEventListener("click", openNewChatModal);
     newChatClose.addEventListener("click", closeNewChatModal);
     newChatModal.addEventListener("click", e => { if (e.target === newChatModal) closeNewChatModal(); });
