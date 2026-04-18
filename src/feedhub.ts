@@ -1,5 +1,5 @@
 import * as signalR from "@microsoft/signalr";
-import type { PostDto } from "./api";
+import type { PostDto, CommentDto } from "./api";
 import { loadSession } from "./api";
 
 const HUB_URL = "http://localhost:5000/hubs/feed";
@@ -10,16 +10,14 @@ export type FeedEventMap = {
     newPost: (post: PostDto) => void;
     deletePost: (id: number) => void;
     updateLikes: (data: { postId: number; likesCount: number }) => void;
+    newComment: (data: { postId: number; comment: CommentDto }) => void;
 };
 
 type Listeners = { [K in keyof FeedEventMap]: FeedEventMap[K][] };
 
-const listeners: Listeners = { newPost: [], deletePost: [], updateLikes: [] };
+const listeners: Listeners = { newPost: [], deletePost: [], updateLikes: [], newComment: [] };
 
-export function onFeedEvent<K extends keyof FeedEventMap>(
-    event: K,
-    handler: FeedEventMap[K]
-) {
+export function onFeedEvent<K extends keyof FeedEventMap>(event: K, handler: FeedEventMap[K]) {
     (listeners[event] as FeedEventMap[K][]).push(handler);
 }
 
@@ -27,24 +25,15 @@ export async function connectFeed() {
     const session = loadSession();
 
     connection = new signalR.HubConnectionBuilder()
-        .withUrl(HUB_URL, {
-            accessTokenFactory: () => session?.token ?? "",
-        })
+        .withUrl(HUB_URL, { accessTokenFactory: () => session?.token ?? "" })
         .withAutomaticReconnect()
         .configureLogging(signalR.LogLevel.Warning)
         .build();
 
-    connection.on("NewPost", (post: PostDto) => {
-        listeners.newPost.forEach((fn) => fn(post));
-    });
-
-    connection.on("DeletePost", (id: number) => {
-        listeners.deletePost.forEach((fn) => fn(id));
-    });
-
-    connection.on("UpdateLikes", (data: { postId: number; likesCount: number }) => {
-        listeners.updateLikes.forEach((fn) => fn(data));
-    });
+    connection.on("NewPost", (post: PostDto) => listeners.newPost.forEach(fn => fn(post)));
+    connection.on("DeletePost", (id: number) => listeners.deletePost.forEach(fn => fn(id)));
+    connection.on("UpdateLikes", (data: { postId: number; likesCount: number }) => listeners.updateLikes.forEach(fn => fn(data)));
+    connection.on("NewComment", (data: { postId: number; comment: CommentDto }) => listeners.newComment.forEach(fn => fn(data)));
 
     await connection.start();
     console.log("[SignalR] connected");
