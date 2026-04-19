@@ -16,6 +16,8 @@ import {
 import { connectFeed, onFeedEvent } from "./feedhub";
 import { initMessenger } from "./messenger";
 import { applyAvatar, openProfileModal } from "./profile";
+import { connectCallHub, wireCallUI } from "./calls";
+import { openUserPage } from "./userpage";
 
 let oldestPostId: number | undefined;
 let isLoading = false;
@@ -270,6 +272,10 @@ function renderPost(post: PostDto, prepend = false): HTMLElement {
         if (avatarEl) applyAvatar(avatarEl, session?.avatarUrl ?? null);
     }
 
+    el.querySelector(".post-header .avatar")?.addEventListener("click", () => openUserPage(post.userId));
+    el.querySelector(".post-author")?.addEventListener("click", () => openUserPage(post.userId));
+    el.querySelector(".post-username")?.addEventListener("click", () => openUserPage(post.userId));
+
     el.querySelector(".post-delete")?.addEventListener("click", async () => {
         if (!confirm("Удалить пост?")) return;
         await apiDeletePost(post.id);
@@ -347,6 +353,8 @@ async function boot() {
     hasMore = true;
 
     await connectFeed();
+    await connectCallHub();
+    wireCallUI();
     wireSignalR();
     await loadMore();
 

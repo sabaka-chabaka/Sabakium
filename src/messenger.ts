@@ -19,6 +19,8 @@ import {
     type EncryptedMessageDto,
 } from "./chathub";
 import { loadSession } from "./api";
+import { startCall } from "./calls";
+import { openUserPage } from "./userpage";
 
 let currentPartnerId: number | null = null;
 let currentPartnerAvatarUrl: string | null = null;
@@ -306,6 +308,13 @@ async function openConversation(partnerId: number, partnerName: string, partnerA
     applyBg(chatPartnerAvatar as HTMLElement, partnerAvatar);
     chatStatusEl.textContent = "…";
     chatStatusEl.className = "chat-partner-status";
+
+    const callBtn = document.getElementById("chat-call-btn");
+    if (callBtn) {
+        callBtn.onclick = () => startCall(partnerId, partnerName);
+    }
+
+    chatPartnerAvatar.onclick = () => openUserPage(partnerId);
 
     document.querySelectorAll(".conv-item").forEach(el =>
         el.classList.toggle("active", el.getAttribute("data-pid") === String(partnerId))
