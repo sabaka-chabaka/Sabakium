@@ -1,4 +1,5 @@
 <!doctype html>
+<!--suppress XmlDuplicatedId -->
 <html lang="ru">
 <head>
     <meta charset="UTF-8"/>
@@ -115,6 +116,9 @@
                     <div class="chat-enc-badge" title="AES-GCM шифрование end-to-end">
                         <i class="fa-solid fa-lock"></i> E2E
                     </div>
+                    <button class="btn icon chat-call-btn" id="chat-call-btn" title="Аудиозвонок">
+                        <i class="fa-solid fa-phone"></i>
+                    </button>
                 </div>
                 <div class="chat-messages" id="chat-messages">
                     <div id="chat-typing-indicator" class="chat-typing-indicator hidden">
@@ -197,6 +201,41 @@
         <div class="crop-actions">
             <button class="crop-rotate-btn" id="crop-rotate"><i class="fa-solid fa-rotate-right"></i> Повернуть</button>
             <button class="crop-confirm-btn" id="crop-confirm">Готово</button>
+        </div>
+    </div>
+</div>
+
+<div id="call-ui" class="call-ui hidden">
+    <div class="call-card">
+        <div class="call-avatar-ring">
+            <div class="call-avatar-pulse"></div>
+            <i class="fa-solid fa-phone call-avatar-icon"></i>
+        </div>
+        <div class="call-partner-name"></div>
+        <div class="call-status"></div>
+
+        <div class="call-actions-incoming hidden">
+            <button class="call-btn call-decline-btn" title="Отклонить">
+                <i class="fa-solid fa-phone-slash"></i>
+            </button>
+            <button class="call-btn call-accept-btn" title="Принять">
+                <i class="fa-solid fa-phone"></i>
+            </button>
+        </div>
+
+        <div class="call-actions-outgoing hidden">
+            <button class="call-btn call-hangup-outgoing-btn" title="Отменить">
+                <i class="fa-solid fa-phone-slash"></i>
+            </button>
+        </div>
+
+        <div class="call-actions-active hidden">
+            <button class="call-btn call-mute-btn" title="Выключить микрофон">
+                <i class="fa-solid fa-microphone"></i>
+            </button>
+            <button class="call-btn call-hangup-btn" title="Завершить">
+                <i class="fa-solid fa-phone-slash"></i>
+            </button>
         </div>
     </div>
 </div>
