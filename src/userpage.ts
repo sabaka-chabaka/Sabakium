@@ -58,7 +58,7 @@ function renderPostCard(post: PostDto): string {
 
 export async function openUserPage(userId: number) {
     const session = loadSession();
-    if (session?.userId === userId) return;
+    //if (session?.userId === userId) return;
 
     let modal = document.getElementById("user-page-modal");
     if (!modal) {
